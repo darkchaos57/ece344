@@ -28,6 +28,9 @@ unsigned long hash_function(char *str, long table_size) {
 }
 
 void add_hash(struct wc *wc, char *word, int key, int word_len) {
+	if(wc->entries[key] == NULL) {
+		wc->entries[key] = (entry *)malloc(sizeof(entry));
+	}
 	if(wc->entries[key]->word == NULL) {
 		wc->entries[key]->word = (char *)malloc((word_len + 1)*sizeof(char));
 		strncpy(wc->entries[key]->word, word, word_len); //saves the word to the key location of the hash map
@@ -100,15 +103,9 @@ wc_init(char *word_array, long size)
 	wc->entries = (entry **)malloc(size * sizeof(entry *));
 	assert(wc->entries);
 
-	for(int i = 0; i < size; i++) {
-		wc->entries[i] = (entry *)malloc(size * sizeof(entry));
-	}
-
 	wc->size = size;
 
 	create_words(wc, word_array);
-	
-	wc_output(wc);
 
 	return wc;
 }
@@ -117,21 +114,30 @@ void
 wc_output(struct wc *wc)
 {
 	for(long i = 0; i < wc->size; i++) {
-		if(wc->entries[i]->word != NULL) {
-			printf("%s:%d\n", wc->entries[i]->word, wc->entries[i]->value);
-		}
+		if(wc->entries[i] != NULL) {
+			if(wc->entries[i]->word != NULL) {
+				printf("%s:%d\n", wc->entries[i]->word, wc->entries[i]->value);
+			}	
+		}	
 	}
 }
 
 void
 wc_destroy(struct wc *wc)
 {
-	;
+	for(int i = 0; i < wc->size; i++) {
+		if(wc->entries[i] != NULL) {
+			free(wc->entries[i]->word);
+			free(wc->entries[i]);
+		}
+		i++;
+	}
+	free(wc->entries);
 	free(wc);
 }
 
-int main() {
+/*int main() {
 	char* test = "aaa vvv sss aaa ddd xxx ";
 	wc_init(test,10);
 	return 0;
-}//test function
+}*/ //test function
