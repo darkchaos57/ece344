@@ -68,6 +68,7 @@ void cpr(char *src, char *dst) {
 		if(chmod(dst, stats.st_mode)) {
 			syserror(chmod, dst);
 		}
+		return;
 	}
 	else if(S_ISDIR(stats.st_mode)) {
 		//it is a directory
