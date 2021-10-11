@@ -26,15 +26,15 @@ typedef struct thread Thread;
 //statically allocate THREAD_MAX_THREADS thread structures into an array all_threads and set to NULL
 Thread all_threads[THREAD_MAX_THREADS] = {{0}};
 
-//declare linked list for ready queue
+//declare linked list for ready queue (stores just the Tid of the thread in queue)
 struct ready_node {
-	struct thread thread;
+	Tid tid;
 	struct ready_node *next;
 };
 
-//declare linked list for exit queue
+//declare linked list for exit queue (stores just the Tid of the thread in queue)
 struct exit_node {
-	struct thread thread;
+	Tid tid;
 	struct exit_node *next;
 };
 
@@ -80,12 +80,12 @@ struct wait_queue {
 };
 
 //function to add threads to ready queue
-void add_to_ready(struct ready_queue *q, struct thread thread) {
+void add_to_ready(struct ready_queue *q, Tid tid) {
 	if(q->count < THREAD_MAX_THREADS) {
 		//populate the queue (linked list)
 		struct ready_node *temp;
 		temp = malloc(sizeof(struct ready_node));
-		temp->thread = thread;
+		temp->tid = tid; //stores the thread id of the element added to queue
 		temp->next = NULL;
 		//if the queue is not empty
 		if(!is_ready_empty(q)) {
@@ -105,12 +105,12 @@ void add_to_ready(struct ready_queue *q, struct thread thread) {
 }
 
 //function to add threads to exit queue
-void add_to_exit(struct exit_queue *q, struct thread thread) {
+void add_to_exit(struct exit_queue *q, Tid tid) {
 	if(q->count < THREAD_MAX_THREADS) {
 		//populate the queue (linked list)
 		struct exit_node *temp;
 		temp = malloc(sizeof(struct exit_node));
-		temp->thread = thread;
+		temp->tid = tid;
 		temp->next = NULL;
 		//if the queue is not empty
 		if(!is_exit_empty(q)) {
@@ -130,28 +130,28 @@ void add_to_exit(struct exit_queue *q, struct thread thread) {
 }
 
 
-//function to get threads from ready queue
-Thread get_ready(struct ready_queue *q) {
+//function to get tid from ready queue
+Tid get_ready(struct ready_queue *q) {
 	struct ready_node *temp;
-	Thread thread = q->front->thread;
+	Tid tid = q->front->tid;
 	temp = q->front;
 	q->front = q->front->next; //set the front of queue to next
 	q->count -= 1;
 	//eventually, all initializations of the queue are freed
 	free(temp);
-	return(thread);
+	return(tid);
 }
 
-//function to get threads from exit queue
-Thread get_exit(struct exit_queue *q) {
+//function to get tid from exit queue
+Tid get_exit(struct exit_queue *q) {
 	struct exit_node *temp;
-	Thread thread = q->front->thread;
+	Tid tid = q->front->tid;
 	temp = q->front;
 	q->front = q->front->next; //set the front of queue to next
 	q->count -= 1;
 	//eventually, all initializations of the queue are freed
 	free(temp);
-	return(thread);
+	return(tid);
 }
 
 /* thread starts by calling thread_stub. The arguments to thread_stub are the
