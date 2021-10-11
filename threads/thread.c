@@ -12,6 +12,17 @@
 //declare global variables
 Tid running_tid = 0;
 
+/* This is the thread control block */
+struct thread {
+	/* ... Fill this in ... */
+	Tid tid; //the id of the current thread
+	int state; //the state of the current thread
+	void *sp; //a pointer to the stack pointer (bottom of malloc'd stack for the thread)
+	struct thread *next; //pointer to next thread in a queue
+	ucontext_t t_context; //the current context of the thread
+};
+typedef struct thread Thread;
+
 //statically allocate THREAD_MAX_THREADS thread structures into an array all_threads
 struct thread * all_threads[THREAD_MAX_THREADS];
 
@@ -30,16 +41,16 @@ struct exit_node {
 //declare ready queue
 struct ready_queue {
 	int count;
-	node *front;
-	node *rear;
-};
+	struct ready_node *front;
+	struct ready_node *rear;
+}*q_ready;
 
 //declare exit queue
 struct exit_queue {
 	int count;
-	node *front;
-	node *rear;
-};
+	struct exit_node *front;
+	struct exit_node *rear;
+}*q_exit;
 
 //initializes queues
 void initialize_ready(struct ready_queue *q) {
@@ -55,11 +66,11 @@ void initialize_exit(struct exit_queue *q) {
 }
 
 //checks if queues are empty
-void is_ready_empty(struct ready_queue *q) {
+int is_ready_empty(struct ready_queue *q) {
 	return (q->rear == NULL);
 }
 
-void is_exit_empty(struct exit_queue *q) {
+int is_exit_empty(struct exit_queue *q) {
 	return (q->rear == NULL);
 }
 
@@ -102,7 +113,7 @@ void add_to_exit(struct exit_queue *q, struct thread thread) {
 		temp->thread = thread;
 		temp->next = NULL;
 		//if the queue is not empty
-		if(!is_ready_empty(q)) {
+		if(!is_exit_empty(q)) {
 			//set the rear to the new node
 			q->rear->next = temp;
 			q->rear = temp;
@@ -120,9 +131,9 @@ void add_to_exit(struct exit_queue *q, struct thread thread) {
 
 
 //function to get threads from ready queue
-struct thread get_ready(struct ready_queue *q) {
+Thread get_ready(struct ready_queue *q) {
 	struct ready_node *temp;
-	struct thread thread = q->front->thread;
+	Thread thread = q->front->thread;
 	temp = q->front;
 	q->front = q->front->next; //set the front of queue to next
 	q->count -= 1;
@@ -132,9 +143,9 @@ struct thread get_ready(struct ready_queue *q) {
 }
 
 //function to get threads from exit queue
-struct thread get_exit(struct exit_queue *q) {
+Thread get_exit(struct exit_queue *q) {
 	struct exit_node *temp;
-	struct thread = q->front->thread;
+	Thread thread = q->front->thread;
 	temp = q->front;
 	q->front = q->front->next; //set the front of queue to next
 	q->count -= 1;
@@ -143,18 +154,9 @@ struct thread get_exit(struct exit_queue *q) {
 	return(thread);
 }
 
-/* This is the thread control block */
-struct thread {
-	/* ... Fill this in ... */
-	Tid tid; //the id of the current thread
-	int state; //the state of the current thread
-	void *sp; //a pointer to the stack pointer (bottom of malloc'd stack for the thread)
-	struct thread *next; //pointer to next thread in a queue
-	ucontext_t t_context; //the current context of the thread
-};
-
-/* thread starts by calling thread_stub. The arguments to thread_stub are the
- * thread_main() function, and one argument to the thread_main() function. */
+/*
+* thread starts by calling thread_stub. The arguments to thread_stub are the
+ * thread_main() function, and one argument to the thread_main() function. /
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
@@ -163,7 +165,7 @@ thread_stub(void (*thread_main)(void *), void *arg)
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit();
 }
-
+*/
 void
 thread_init(void)
 {
@@ -174,26 +176,27 @@ thread_init(void)
 	}
 
 	//allocate a thread control block for the main kernel thread
-	struct thread * main = (struct thread *)malloc(sizeof(struct thread));
+	Thread * init_thread = (Thread *)malloc(sizeof(Thread));
 	//save the context of the main kernel thread
-	getcontext(&main->t_context);
+	getcontext(&init_thread->t_context);
 
 	//set the context for the running thread which will be main
-	main->tid = 0;
-	main->state = RUNNING;
-	main->sp = NULL;
-	main->next = NULL;
+	init_thread->tid = 0;
+	init_thread->state = RUNNING;
+	init_thread->sp = NULL;
+	init_thread->next = NULL;
 	
-	Tid running_tid = main->tid;
+	running_tid = init_thread->tid;
 
-	//initialize queues
-	struct ready_queue *q;
-	q = malloc(sizeof(struct ready_queue);
-	initialize_ready(q);
+	//initialize queues (need to do this globally)
+	q_ready = malloc(sizeof(struct ready_queue));
+	initialize_ready(q_ready);
 
-	struct exit_queue *q;
-	q = malloc(sizeof(struct exit_queue);
-	initialize_exit(q);
+	q_exit = malloc(sizeof(struct exit_queue));
+	initialize_exit(q_exit);
+
+	/* the following code tests the queues functions only */
+	
 }
 
 Tid
