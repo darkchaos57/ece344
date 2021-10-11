@@ -15,17 +15,53 @@ Tid running_tid = 0;
 //statically allocate THREAD_MAX_THREADS thread structures into an array all_threads
 struct thread * all_threads[THREAD_MAX_THREADS];
 
+//declare linked list for ready queue
+struct ready_node {
+	struct thread thread;
+	struct ready_node *next;
+};
+
+//declare linked list for exit queue
+struct exit_node {
+	struct thread thread;
+	struct exit_node *next;
+};
+
 //declare ready queue
 struct ready_queue {
-	Tid tid; //id of the thread in ready queue
-	struct ready_queue *next; //pointer to the next thread in ready queue
+	int count;
+	node *front;
+	node *rear;
 };
 
 //declare exit queue
 struct exit_queue {
-	Tid tid; //id of the thread in exit queue
-	struct exit_queue *next; //pointer to the next thread in exit queue
+	int count;
+	node *front;
+	node *rear;
 };
+
+//initializes queues
+void initialize_ready(struct ready_queue *q) {
+	q->count = 0;
+	q->front = NULL;
+	q->rear = NULL;
+}
+
+void initialize_exit(struct exit_queue *q) {
+	q->count = 0;
+	q->front = NULL;
+	q->rear = NULL;
+}
+
+//checks if queues are empty
+void is_ready_empty(struct ready_queue *q) {
+	return (q->rear == NULL);
+}
+
+void is_exit_empty(struct exit_queue *q) {
+	return (q->rear == NULL);
+}
 
 /* This is the wait queue structure */
 struct wait_queue {
@@ -33,23 +69,78 @@ struct wait_queue {
 };
 
 //function to add threads to ready queue
-void add_to_ready(Tid tid) {
-	;
+void add_to_ready(struct ready_queue *q, struct thread thread) {
+	if(q->count < THREAD_MAX_THREADS) {
+		//populate the queue (linked list)
+		struct ready_node *temp;
+		temp = malloc(sizeof(struct ready_node));
+		temp->thread = thread;
+		temp->next = NULL;
+		//if the queue is not empty
+		if(!is_ready_empty(q)) {
+			//set the rear to the new node
+			q->rear->next = temp;
+			q->rear = temp;
+		}
+		else {
+			q->front = temp;
+			q->rear = temp;
+		}
+		q->count += 1; //keep track of how many items in ready queue
+	}
+	else {
+		printf("queue full, max threads exceeded.");
+	}
 }
 
 //function to add threads to exit queue
-void add_to_exit(Tid tid) {
-	;
+void add_to_exit(struct exit_queue *q, struct thread thread) {
+	if(q->count < THREAD_MAX_THREADS) {
+		//populate the queue (linked list)
+		struct exit_node *temp;
+		temp = malloc(sizeof(struct exit_node));
+		temp->thread = thread;
+		temp->next = NULL;
+		//if the queue is not empty
+		if(!is_ready_empty(q)) {
+			//set the rear to the new node
+			q->rear->next = temp;
+			q->rear = temp;
+		}
+		else {
+			q->front = temp;
+			q->rear = temp;
+		}
+		q->count += 1; //keep track of how many items in exit queue
+	}
+	else {
+		printf("queue full, max threads exceeded.");
+	}
 }
 
+
 //function to get threads from ready queue
-void get_ready(Tid tid) {
-	;
+struct thread get_ready(struct ready_queue *q) {
+	struct ready_node *temp;
+	struct thread thread = q->front->thread;
+	temp = q->front;
+	q->front = q->front->next; //set the front of queue to next
+	q->count -= 1;
+	//eventually, all initializations of the queue are freed
+	free(temp);
+	return(thread);
 }
 
 //function to get threads from exit queue
-void get_exit(Tid tid) {
-	;
+struct thread get_exit(struct exit_queue *q) {
+	struct exit_node *temp;
+	struct thread = q->front->thread;
+	temp = q->front;
+	q->front = q->front->next; //set the front of queue to next
+	q->count -= 1;
+	//eventually, all initializations of the queue are freed
+	free(temp);
+	return(thread);
 }
 
 /* This is the thread control block */
@@ -60,7 +151,7 @@ struct thread {
 	void *sp; //a pointer to the stack pointer (bottom of malloc'd stack for the thread)
 	struct thread *next; //pointer to next thread in a queue
 	ucontext_t t_context; //the current context of the thread
-}
+};
 
 /* thread starts by calling thread_stub. The arguments to thread_stub are the
  * thread_main() function, and one argument to the thread_main() function. */
@@ -94,6 +185,15 @@ thread_init(void)
 	main->next = NULL;
 	
 	Tid running_tid = main->tid;
+
+	//initialize queues
+	struct ready_queue *q;
+	q = malloc(sizeof(struct ready_queue);
+	initialize_ready(q);
+
+	struct exit_queue *q;
+	q = malloc(sizeof(struct exit_queue);
+	initialize_exit(q);
 }
 
 Tid
