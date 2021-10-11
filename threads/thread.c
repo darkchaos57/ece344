@@ -178,7 +178,6 @@ thread_init(void)
 	//set the context for the running thread which will be main
 	init_thread->tid = 0;
 	init_thread->state = RUNNING;
-	init_thread->sp = NULL;
 	init_thread->next = NULL;
 	
 	running_tid = init_thread->tid;
@@ -189,6 +188,13 @@ thread_init(void)
 	
 	q_exit = malloc(sizeof(struct exit_queue));
 	initialize_exit(q_exit);
+
+	//initialize a linked list of tid's from 1 to 1023
+	//when a tid is used, take from the front of the linked list and point head to the
+	//next tid, free the original head
+	//when a tid is recycled, add the tid to the end of the linked list
+	//this is faster than looping through tid's to find an available tid when create
+	//this is faster than putting tid's into the first empty slot when exit
 
 	/* the following code tests the queues functions only */
 	
@@ -207,6 +213,16 @@ thread_id()
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
+	//malloc stack of size struct thread
+	//provide tid for thread create by taking the first element of an array containing tid's
+	//that can be used
+	//set the state
+	//use getcontext of the current thread to save into t_context of new thread
+	//set registers of new thread to point to the new stack, then set the frame pointer
+	//to point to the new stack pointer (set registers, not sure how to do this)
+	//add this new tid to the ready queue
+	//setcontext the original caller to let the original caller continue running
+	//return tid of new thread
 	TBD();
 	return THREAD_FAILED;
 }
@@ -214,6 +230,13 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
+	//make sure running_tid struct members are saved in all_threads[running_tid]
+	//getcontext will take in an argument that references the t_context of the running_tid
+	//place running_tid into the ready queue
+	//fetch FIFO tid from ready queue that is ready to run
+	//setcontext by referencing all_threads[ready_tid]
+	//update all_threads[ready_tid] struct members
+	//return tid of the new running thread (return(running_tid)) once updated
 	TBD();
 	return THREAD_FAILED;
 }
@@ -221,12 +244,23 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
+	//"yield" the thread by fetching a new tid from ready queue
+	//getcontext the thread calling thread_exit() 
+	//add the thread id to the exit queue
+	//setcontext new thread from running queue
+	//set running thread to new thread from ready queue
 	TBD();
 }
 
 Tid
 thread_kill(Tid tid)
 {
+	//check that the thread is in the exit queue
+	//remove the thread tid from the ready queue (beginning, middle, or end)
+	//find the thread id identified structure in all_threads and set all members to NULL
+	//free the stack that the thread id was taking up
+	//add this tid to an array containing all free tids
+	//return the tid of the thread just killed
 	TBD();
 	return THREAD_FAILED;
 }
