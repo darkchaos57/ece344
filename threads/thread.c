@@ -4,26 +4,105 @@
 #include "thread.h"
 #include "interrupt.h"
 
+//define thread states
+#define READY 0
+#define RUNNING 1
+#define EXIT 2
+
+//declare global variables
+Tid running_tid = 0;
+
+//statically allocate THREAD_MAX_THREADS thread structures into an array all_threads
+struct thread * all_threads[THREAD_MAX_THREADS];
+
+//declare ready queue
+struct ready_queue {
+	Tid tid; //id of the thread in ready queue
+	struct ready_queue *next; //pointer to the next thread in ready queue
+};
+
+//declare exit queue
+struct exit_queue {
+	Tid tid; //id of the thread in exit queue
+	struct exit_queue *next; //pointer to the next thread in exit queue
+};
+
 /* This is the wait queue structure */
 struct wait_queue {
 	/* ... Fill this in Lab 3 ... */
 };
 
+//function to add threads to ready queue
+void add_to_ready(Tid tid) {
+	;
+}
+
+//function to add threads to exit queue
+void add_to_exit(Tid tid) {
+	;
+}
+
+//function to get threads from ready queue
+void get_ready(Tid tid) {
+	;
+}
+
+//function to get threads from exit queue
+void get_exit(Tid tid) {
+	;
+}
+
 /* This is the thread control block */
 struct thread {
 	/* ... Fill this in ... */
-};
+	Tid tid; //the id of the current thread
+	int state; //the state of the current thread
+	void *sp; //a pointer to the stack pointer (bottom of malloc'd stack for the thread)
+	struct thread *next; //pointer to next thread in a queue
+	ucontext_t t_context; //the current context of the thread
+}
+
+/* thread starts by calling thread_stub. The arguments to thread_stub are the
+ * thread_main() function, and one argument to the thread_main() function. */
+void
+thread_stub(void (*thread_main)(void *), void *arg)
+{
+	Tid ret;
+
+	thread_main(arg); // call thread_main() function with arg
+	thread_exit();
+}
 
 void
 thread_init(void)
 {
 	/* your optional code here */
+	for(int i = 0; i < THREAD_MAX_THREADS; i++) {
+		//initialize all thread structures as null (includes the tid)
+		all_threads[i] = NULL;
+	}
+
+	//allocate a thread control block for the main kernel thread
+	struct thread * main = (struct thread *)malloc(sizeof(struct thread));
+	//save the context of the main kernel thread
+	getcontext(&main->t_context);
+
+	//set the context for the running thread which will be main
+	main->tid = 0;
+	main->state = RUNNING;
+	main->sp = NULL;
+	main->next = NULL;
+	
+	Tid running_tid = main->tid;
 }
 
 Tid
 thread_id()
 {
-	TBD();
+	//double check to see if the thread is actually in the running state
+	if(all_threads[running_tid]->state == RUNNING) {
+		return running_tid;
+	}
 	return THREAD_INVALID;
 }
 
