@@ -23,8 +23,8 @@ struct thread {
 };
 typedef struct thread Thread;
 
-//statically allocate THREAD_MAX_THREADS thread structures into an array all_threads
-struct thread * all_threads[THREAD_MAX_THREADS];
+//statically allocate THREAD_MAX_THREADS thread structures into an array all_threads and set to NULL
+Thread all_threads[THREAD_MAX_THREADS] = {{0}};
 
 //declare linked list for ready queue
 struct ready_node {
@@ -154,26 +154,21 @@ Thread get_exit(struct exit_queue *q) {
 	return(thread);
 }
 
-/*
-* thread starts by calling thread_stub. The arguments to thread_stub are the
- * thread_main() function, and one argument to the thread_main() function. /
+/* thread starts by calling thread_stub. The arguments to thread_stub are the
+ * thread_main() function, and one argument to the thread_main() function. */
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
-	Tid ret;
+	//Tid ret; //currently unused causing compile errors
 
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit();
 }
-*/
+
 void
 thread_init(void)
 {
 	/* your optional code here */
-	for(int i = 0; i < THREAD_MAX_THREADS; i++) {
-		//initialize all thread structures as null (includes the tid)
-		all_threads[i] = NULL;
-	}
 
 	//allocate a thread control block for the main kernel thread
 	Thread * init_thread = (Thread *)malloc(sizeof(Thread));
@@ -191,7 +186,7 @@ thread_init(void)
 	//initialize queues (need to do this globally)
 	q_ready = malloc(sizeof(struct ready_queue));
 	initialize_ready(q_ready);
-
+	
 	q_exit = malloc(sizeof(struct exit_queue));
 	initialize_exit(q_exit);
 
@@ -203,9 +198,9 @@ Tid
 thread_id()
 {
 	//double check to see if the thread is actually in the running state
-	if(all_threads[running_tid]->state == RUNNING) {
+	if(all_threads[running_tid].state == RUNNING) {
 		return running_tid;
-	}
+	}	
 	return THREAD_INVALID;
 }
 
