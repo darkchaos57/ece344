@@ -130,7 +130,7 @@ void add_to_exit(struct exit_queue *q, Tid tid) {
 }
 
 
-//function to get tid from ready queue
+//function to get tid from head of ready queue
 Tid get_ready(struct ready_queue *q) {
 	struct ready_node *temp;
 	Tid tid = q->front->tid;
@@ -142,7 +142,47 @@ Tid get_ready(struct ready_queue *q) {
 	return(tid);
 }
 
-//function to get tid from exit queue
+//function to get target thread from ready queue. return 1 if found, otherwise return 0
+int get_ready_target(struct ready_queue *q, Tid tid) {
+	int found = 0;
+	struct ready_node *temp;
+	struct ready_node *finder;
+	temp = q->front;
+	do {
+		//found the tid
+		if(temp->tid == tid) {
+			//if this is the head
+			if(temp == q->front) {
+				//just pop the head of the queue
+				get_ready(q);
+				return 1;
+			}
+			else {
+				//remove from queue
+				finder = temp;
+				temp = q->front;
+				//loop temp until finder is found
+				while(temp->next != finder) {
+					temp = temp->next;
+				}
+				//point pointer before the target to pointer after the target
+				temp->next = finder->next;
+				//double check finder->tid is what we are looking for
+				if(finder->tid == tid) {
+					free(finder); //free the node we found
+					found = 1;
+				}
+			}
+		}
+		else {
+			temp = temp->next;
+		}
+	} while(temp->next != NULL);
+	//do something because tid is not in the queue
+	return found;
+}
+
+//function to get tid from head of exit queue
 Tid get_exit(struct exit_queue *q) {
 	struct exit_node *temp;
 	Tid tid = q->front->tid;
@@ -179,6 +219,7 @@ thread_init(void)
 	init_thread->tid = 0;
 	init_thread->state = RUNNING;
 	init_thread->next = NULL;
+	all_threads[init_thread->tid] = *init_thread; //saves this thread and its context
 	
 	running_tid = init_thread->tid;
 
@@ -188,6 +229,20 @@ thread_init(void)
 	
 	q_exit = malloc(sizeof(struct exit_queue));
 	initialize_exit(q_exit);
+
+	/*just to see if i actually made a thread.
+	printf("Thread tid: %d, Thread state: %d", all_threads[init_thread->tid].tid, all_threads[init_thread->tid].state);*/
+
+	/*try to add and remove a thread using ready queue
+	 add_to_ready(q_ready, 0);
+	 printf("This is what is in the front of the ready queue: %d, the rear of the ready queue: %d, and there are %d items in the ready queue.\n", q_ready->front->tid, q_ready->rear->tid, q_ready->count);
+	 Tid tid = get_ready(q_ready);
+	 printf("this is what we have at the start of the queue: %d\n", tid);
+	 int is_empty = 0;
+	 if(q_ready->front == NULL) is_empty = 1;
+	 printf("This is the queue now (should be empty), count: %d, is list empty?: %d\n", q_ready->count, is_empty);
+	 */
+
 
 	//initialize a linked list of tid's from 1 to 1023
 	//when a tid is used, take from the front of the linked list and point head to the
@@ -230,6 +285,7 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
+	int found = 0;
 	//make sure running_tid struct members are saved in all_threads[running_tid]
 	//getcontext will take in an argument that references the t_context of the running_tid
 	//place running_tid into the ready queue
@@ -237,8 +293,42 @@ thread_yield(Tid want_tid)
 	//setcontext by referencing all_threads[ready_tid]
 	//update all_threads[ready_tid] struct members
 	//return tid of the new running thread (return(running_tid)) once updated
-	TBD();
-	return THREAD_FAILED;
+	
+	//save the current running thread context
+	getcontext(&all_threads[running_tid].t_context);
+
+	//set members and add to ready queue
+	all_threads[running_tid].state = READY;
+	add_to_ready(q_ready, running_tid);
+
+	//get want_tid context
+	if(want_tid == THREAD_ANY) {
+		if(q_ready->count == 0) return(THREAD_NONE); //no threads in ready queue
+		//can only happen if last thread called thread_exit()
+		running_tid = get_ready(q_ready);
+		setcontext(&all_threads[running_tid].t_context);
+		all_threads[running_tid].state = RUNNING;
+	}
+	//if same thread is run again
+	else if(want_tid == THREAD_SELF) {
+		found = get_ready_target(q_ready, running_tid); //will return 1 for sure
+		all_threads[running_tid].state = RUNNING;
+		setcontext(&all_threads[running_tid].t_context);
+	}
+	//if a specific thread is to be found to run
+	else {
+		found = get_ready_target(q_ready, want_tid);
+		if(found) {
+			running_tid = want_tid;
+			all_threads[running_tid].state = RUNNING;
+			setcontext(&all_threads[running_tid].t_context);
+		}
+		else {
+			return(THREAD_INVALID);
+		}
+	}	
+	return(running_tid);
+	return THREAD_FAILED; //not sure what this does
 }
 
 void
