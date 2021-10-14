@@ -136,6 +136,10 @@ Tid get_ready(struct ready_queue *q) {
 	Tid tid = q->front->tid;
 	temp = q->front;
 	q->front = q->front->next; //set the front of queue to next
+	//if q->front becomes NULL, make sure to set rear to NULL as well
+	if(q->front == NULL) {
+		q->rear = NULL;
+	}
 	q->count -= 1;
 	//eventually, all initializations of the queue are freed
 	free(temp);
@@ -171,6 +175,7 @@ int get_ready_target(struct ready_queue *q, Tid tid) {
 				if(finder->tid == tid) {
 					free(finder); //free the node we found
 					found = 1;
+					q->count -= 1;
 				}
 			}
 		}
@@ -278,7 +283,32 @@ thread_create(void (*fn) (void *), void *parg)
 	//add this new tid to the ready queue
 	//setcontext the original caller to let the original caller continue running
 	//return tid of new thread
-	TBD();
+	int i = 0;
+	//loop until we find a tid that is NULL (available)
+	while(all_threads[i].sp != NULL && i < 1024) {
+		i++; //increments until we find an available tid
+	}
+	if(i == 1024) {
+		return THREAD_NOMORE; //if we couldn't find anything available after 1024 threads, then we return THREAD_NOMORE;
+	}
+	//set up the thread
+	all_threads[i].tid = i;
+	all_threads[i].state = READY;
+	all_threads[i].sp = (void *)malloc(THREAD_MIN_STACK); //allocate space for new stack
+	if(all_threads[i].sp == NULL) {
+		return THREAD_NOMEMORY; //if malloc returns NULL, it means no space left to allocate stack
+	}
+	add_to_ready(q_ready, i); //add the thread to the ready queue
+	getcontext(&all_threads[i].t_context); //save the context
+	//when the thread is ready to be run
+	all_threads[i].t_context.uc_stack.ss_size = THREAD_MIN_STACK;
+	all_threads[i].t_context.uc_stack.ss_sp = all_threads[i].sp;
+	all_threads[i].t_context.uc_mcontext.gregs[REG_RSP] = (unsigned long) (all_threads[i].sp + THREAD_MIN_STACK - 8); //stack pointer to "bottom" of stack
+	all_threads[i].t_context.uc_mcontext.gregs[REG_RBP] = (unsigned long) all_threads[i].sp; //base pointer to "top" of stack
+	all_threads[i].t_context.uc_mcontext.gregs[REG_RDI] = (unsigned long) fn;
+	all_threads[i].t_context.uc_mcontext.gregs[REG_RSI] = (unsigned long) parg;
+	all_threads[i].t_context.uc_mcontext.gregs[REG_RIP] = (unsigned long) &thread_stub;
+	return(i);
 	return THREAD_FAILED;
 }
 
@@ -286,6 +316,7 @@ Tid
 thread_yield(Tid want_tid)
 {
 	int found = 0;
+	int setcontext_called = 0;
 	//make sure running_tid struct members are saved in all_threads[running_tid]
 	//getcontext will take in an argument that references the t_context of the running_tid
 	//place running_tid into the ready queue
@@ -296,35 +327,45 @@ thread_yield(Tid want_tid)
 	
 	//save the current running thread context
 	getcontext(&all_threads[running_tid].t_context);
-
-	//set members and add to ready queue
-	all_threads[running_tid].state = READY;
-	add_to_ready(q_ready, running_tid);
-
-	//get want_tid context
-	if(want_tid == THREAD_ANY) {
-		if(q_ready->count == 0) return(THREAD_NONE); //no threads in ready queue
-		//can only happen if last thread called thread_exit()
-		running_tid = get_ready(q_ready);
-		setcontext(&all_threads[running_tid].t_context);
-		all_threads[running_tid].state = RUNNING;
-	}
-	//if same thread is run again
-	else if(want_tid == THREAD_SELF) {
-		found = get_ready_target(q_ready, running_tid); //will return 1 for sure
-		all_threads[running_tid].state = RUNNING;
-		setcontext(&all_threads[running_tid].t_context);
-	}
-	//if a specific thread is to be found to run
-	else {
-		found = get_ready_target(q_ready, want_tid);
-		if(found) {
-			running_tid = want_tid;
+	
+	if(setcontext_called == 0) {
+		//set members and add to ready queue
+		all_threads[running_tid].state = READY;
+		add_to_ready(q_ready, running_tid);
+	
+		//get want_tid context
+		if(want_tid == THREAD_ANY) {
+			if(q_ready->count == 1) {
+				//make sure only thread is running thread (only possibility anyway)
+				if(q_ready->front->tid == running_tid) {
+					return(THREAD_NONE); //no threads in ready queue
+				}
+			}
+			//can only happen if last thread called thread_exit()
+			running_tid = get_ready(q_ready);
 			all_threads[running_tid].state = RUNNING;
+			setcontext_called = 1;
 			setcontext(&all_threads[running_tid].t_context);
 		}
+		//if same thread is run again
+		else if(want_tid == THREAD_SELF) {
+			found = get_ready_target(q_ready, running_tid); //will return 1 for sure
+			all_threads[running_tid].state = RUNNING;
+			setcontext_called = 1;
+			setcontext(&all_threads[running_tid].t_context);
+		}
+		//if a specific thread is to be found to run
 		else {
-			return(THREAD_INVALID);
+			found = get_ready_target(q_ready, want_tid);
+			if(found) {
+				running_tid = want_tid;
+				all_threads[running_tid].state = RUNNING;
+				setcontext_called = 1;
+				setcontext(&all_threads[running_tid].t_context);
+			}
+			else {
+				return(THREAD_INVALID);
+			}
 		}
 	}	
 	return(running_tid);

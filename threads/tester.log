@@ -1,19 +1,29 @@
 main: setcontext_called = 0
-start = 0x55d21eb35000
-end = 0x55d21eb3a000
+start = 0x562b59a69000
+end = 0x562b59a6e000
 ucontext_t size = 968 bytes
-memory address of main() = 0x55d21eb3539c
-memory address of the program counter (RIP) saved in mycontext = 0x55d21eb353be
+memory address of main() = 0x562b59a6939c
+memory address of the program counter (RIP) saved in mycontext = 0x562b59a693be
 argc = 1
-argv = 0x7ffde330b528
-memory address of the variable setcontext_called = 0x7ffde330b42c
-memory address of the variable err = 0x7ffde330b428
+argv = 0x7ffe4231f098
+memory address of the variable setcontext_called = 0x7ffe4231ef9c
+memory address of the variable err = 0x7ffe4231ef98
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffde330b410
+stack pointer register (RSP) stored in mycontext = 0x7ffe4231ef80
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
 interrupt is disabled = 0
 interrupt is disabled = 1
 starting basic test
-test_basic: test_thread.c:47: test_basic: Assertion `thread_id() == 0' failed.
+initial thread returns from yield(SELF)
+initial thread returns from yield(0)
+initial thread returns from yield(ANY)
+initial thread returns from yield(INVALID)
+initial thread returns from yield(INVALID2)
+my id is -3
+my id is 0
+message: hello from thread   0
+thread returns from  first yield
+thread returns from second yield
+test_basic: test_thread.c:100: test_basic: Assertion `ret == child[ii]' failed.
