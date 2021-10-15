@@ -70,7 +70,7 @@ void initialize_exit(struct exit_queue *q) {
 int is_ready_empty(struct ready_queue *q) {
 	return (q->rear == NULL);
 }
-
+//this is unused for now
 int is_exit_empty(struct exit_queue *q) {
 	return (q->rear == NULL);
 }
@@ -213,15 +213,6 @@ Tid get_exit(struct exit_queue *q) {
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
-	//Tid to_free;
-	//Tid ret; //currently unused causing compile errors
-	//we should free exited threads here
-	 /*
-	for(int i = 0; i < q_exit->count; i++) {
-		to_free = get_exit(q_exit);
-		free(all_threads[to_free].sp);
-		all_threads[to_free] = all_threads[THREAD_MAX_THREADS];
-	} */
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit();
 }
@@ -229,7 +220,6 @@ thread_stub(void (*thread_main)(void *), void *arg)
 void
 thread_init(void)
 {
-	/* your optional code here */
 	//allocate a thread control block for the main kernel thread
 	Thread * init_thread = (Thread *)malloc(sizeof(Thread));
 	
@@ -252,30 +242,6 @@ thread_init(void)
 	
 	q_exit = malloc(sizeof(struct exit_queue));
 	initialize_exit(q_exit);
-
-	/*just to see if i actually made a thread.
-	printf("Thread tid: %d, Thread state: %d", all_threads[init_thread->tid].tid, all_threads[init_thread->tid].state);*/
-
-	/*try to add and remove a thread using ready queue
-	 add_to_ready(q_ready, 0);
-	 printf("This is what is in the front of the ready queue: %d, the rear of the ready queue: %d, and there are %d items in the ready queue.\n", q_ready->front->tid, q_ready->rear->tid, q_ready->count);
-	 Tid tid = get_ready(q_ready);
-	 printf("this is what we have at the start of the queue: %d\n", tid);
-	 int is_empty = 0;
-	 if(q_ready->front == NULL) is_empty = 1;
-	 printf("This is the queue now (should be empty), count: %d, is list empty?: %d\n", q_ready->count, is_empty);
-	 */
-
-
-	//initialize a linked list of tid's from 1 to 1023
-	//when a tid is used, take from the front of the linked list and point head to the
-	//next tid, free the original head
-	//when a tid is recycled, add the tid to the end of the linked list
-	//this is faster than looping through tid's to find an available tid when create
-	//this is faster than putting tid's into the first empty slot when exit
-
-	/* the following code tests the queues functions only */
-		
 }
 
 Tid
@@ -291,15 +257,6 @@ thread_id()
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
-	//malloc stack of size struct thread
-	//provide tid for thread create by taking the first element of an array containing tid's
-	//that can be used
-	//set the state
-	//use getcontext of the current thread to save into t_context of new thread
-	//set registers of new thread to point to the new stack, then set the frame pointer
-	//to point to the new stack pointer (set registers, not sure how to do this)
-	//add this new tid to the ready queue
-	//setcontext the original caller to let the original caller continue running
 	//return tid of new thread
 	Tid to_free;
 	while(q_exit->count != 0) {
@@ -317,8 +274,6 @@ thread_create(void (*fn) (void *), void *parg)
 		return THREAD_NOMORE; //if we couldn't find anything available after 1024 threads, then we return THREAD_NOMORE;
 	}
 	//set up the thread
-	//Thread * newThread = (Thread *)malloc(sizeof(Thread));
-	//all_threads[i] = * newThread;
 	all_threads[i].tid = i;
 	all_threads[i].state = READY;
 	all_threads[i].sp = (void *)malloc(THREAD_MIN_STACK); //allocate space for new stack
@@ -329,8 +284,6 @@ thread_create(void (*fn) (void *), void *parg)
 	}
 	add_to_ready(q_ready, i); //add the thread to the ready queue
 	//when the thread is ready to be run
-	//all_threads[i].t_context.uc_stack.ss_size = THREAD_MIN_STACK;
-	//all_threads[i].t_context.uc_stack.ss_sp = all_threads[i].sp;
 	getcontext(&all_threads[i].t_context);
 	long long int offset = (long long int) all_threads[i].sp % 16;
 	all_threads[i].t_context.uc_mcontext.gregs[REG_RSP] = (long long int) (all_threads[i].sp + THREAD_MIN_STACK - offset - 8); //stack pointer to "bottom" of stack
@@ -346,19 +299,8 @@ Tid
 thread_yield(Tid want_tid)
 {
 	int found = 0;
-	//make sure running_tid struct members are saved in all_threads[running_tid]
-	//getcontext will take in an argument that references the t_context of the running_tid
-	//place running_tid into the ready queue
-	//fetch FIFO tid from ready queue that is ready to run
-	//setcontext by referencing all_threads[ready_tid]
-	//update all_threads[ready_tid] struct members
-	//return tid of the new running thread (return(running_tid)) once updated
-
-
-
 
 	all_threads[running_tid].setcontext_called = 0;
-
 
 	//save the current running thread context
 	getcontext(&all_threads[running_tid].t_context);
@@ -418,10 +360,6 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
-	//"yield" the thread by fetching a new tid from ready queue
-	//getcontext the thread calling thread_exit() 
-	//add the thread id to the exit queue
-	//setcontext new thread from running queue
 	//set running thread to new thread from ready queue
 	add_to_exit(q_exit, running_tid); //add the current running thread to the exit queue
 	all_threads[running_tid].state = EXIT;
@@ -442,11 +380,7 @@ thread_kill(Tid tid)
 		return THREAD_INVALID;
 	}
 	int kill = 0;
-	//check that the thread is in the exit queue
-	//remove the thread tid from the ready queue (beginning, middle, or end)
-	//find the thread id identified structure in all_threads and set all members to NULL
-	//free the stack that the thread id was taking up
-	//add this tid to an array containing all free tids
+
 	//return the tid of the thread just killed
 	if(tid == running_tid || all_threads[tid].not_empty == 0) {
 		return THREAD_INVALID; //returns invalid if the thread is the currently running one or does not exist
