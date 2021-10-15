@@ -18,15 +18,14 @@ struct thread {
 	Tid tid; //the id of the current thread
 	int state; //the state of the current thread
 	void *sp; //a pointer to the stack pointer (bottom of malloc'd stack for the thread)
-	struct thread *next; //pointer to next thread in a queue
 	int not_empty;
 	int setcontext_called;
 	ucontext_t t_context; //the current context of the thread
 };
 typedef struct thread Thread;
 
-//statically allocate THREAD_MAX_THREADS thread structures into an array all_threads and set to NULL
-Thread all_threads[THREAD_MAX_THREADS] = {{0}};
+//statically allocate THREAD_MAX_THREADS+1 thread structures into an array all_threads and set to NULL
+Thread all_threads[THREAD_MAX_THREADS+1] = {{0}};
 
 //declare linked list for ready queue (stores just the Tid of the thread in queue)
 struct ready_node {
@@ -198,7 +197,11 @@ Tid get_exit(struct exit_queue *q) {
 	struct exit_node *temp;
 	Tid tid = q->front->tid;
 	temp = q->front;
-	q->front = q->front->next; //set the front of queue to next
+	q->front = q->front->next;
+	//if q->front becomes NULL, make sure to set rear to NULL as well
+	if(q->front == NULL) {
+		q->rear = NULL;
+	}
 	q->count -= 1;
 	//eventually, all initializations of the queue are freed
 	free(temp);
@@ -210,8 +213,15 @@ Tid get_exit(struct exit_queue *q) {
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
+	//Tid to_free;
 	//Tid ret; //currently unused causing compile errors
-
+	//we should free exited threads here
+	 /*
+	for(int i = 0; i < q_exit->count; i++) {
+		to_free = get_exit(q_exit);
+		free(all_threads[to_free].sp);
+		all_threads[to_free] = all_threads[THREAD_MAX_THREADS];
+	} */
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit();
 }
@@ -226,7 +236,6 @@ thread_init(void)
 	//set the context for the running thread which will be main
 	init_thread->tid = 0;
 	init_thread->state = RUNNING;
-	init_thread->next = NULL;
 	init_thread->not_empty = 1;
 	init_thread->setcontext_called = 0;
 	all_threads[init_thread->tid] = *init_thread; //saves this thread and its context
@@ -292,6 +301,13 @@ thread_create(void (*fn) (void *), void *parg)
 	//add this new tid to the ready queue
 	//setcontext the original caller to let the original caller continue running
 	//return tid of new thread
+	Tid to_free;
+	while(q_exit->count != 0) {
+		to_free = get_exit(q_exit);
+		free(all_threads[to_free].sp);
+		all_threads[to_free] = all_threads[THREAD_MAX_THREADS];
+	}
+
 	int i = 0;
 	//loop until we find a tid that is NULL (available)
 	while(all_threads[i].not_empty == 1 && i < 1024) {
@@ -337,7 +353,10 @@ thread_yield(Tid want_tid)
 	//setcontext by referencing all_threads[ready_tid]
 	//update all_threads[ready_tid] struct members
 	//return tid of the new running thread (return(running_tid)) once updated
-	
+
+
+
+
 	all_threads[running_tid].setcontext_called = 0;
 
 
@@ -404,19 +423,49 @@ thread_exit()
 	//add the thread id to the exit queue
 	//setcontext new thread from running queue
 	//set running thread to new thread from ready queue
-	TBD();
+	add_to_exit(q_exit, running_tid); //add the current running thread to the exit queue
+	all_threads[running_tid].state = EXIT;
+	if(q_ready->count > 0) {
+		running_tid = get_ready(q_ready);
+		all_threads[running_tid].state = RUNNING;
+		setcontext(&all_threads[running_tid].t_context);
+	}
+	else {
+		exit(0);
+	}
 }
 
 Tid
 thread_kill(Tid tid)
 {
+	if(tid < 0 || tid > THREAD_MAX_THREADS - 1) {
+		return THREAD_INVALID;
+	}
+	int kill = 0;
 	//check that the thread is in the exit queue
 	//remove the thread tid from the ready queue (beginning, middle, or end)
 	//find the thread id identified structure in all_threads and set all members to NULL
 	//free the stack that the thread id was taking up
 	//add this tid to an array containing all free tids
 	//return the tid of the thread just killed
-	TBD();
+	if(tid == running_tid || all_threads[tid].not_empty == 0) {
+		return THREAD_INVALID; //returns invalid if the thread is the currently running one or does not exist
+	}
+	else {
+		//make sure we don't access an empty list
+		if(q_ready->count > 0) {
+			kill = get_ready_target(q_ready, tid);	//fetch the target out of the ready queue to be killed
+		}
+		if(kill) {
+			//ensures that it isn't something in the exit queue
+			free(all_threads[tid].sp); //free the stack
+			all_threads[tid] = all_threads[THREAD_MAX_THREADS]; //a zero-initialized structure to zero out killed thread structures
+			return(tid);
+		}
+		else {
+			return THREAD_INVALID; //in the exit queue, so it wil be killed later
+		}
+	}
 	return THREAD_FAILED;
 }
 
