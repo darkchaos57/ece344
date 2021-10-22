@@ -312,7 +312,7 @@ thread_id()
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
-	interrupts_off();
+	int enabled = interrupts_off();
 	//return tid of new thread
 	Tid to_free;
 	while(q_exit->count > 0) {
@@ -327,7 +327,7 @@ thread_create(void (*fn) (void *), void *parg)
 		i++; //increments until we find an available tid
 	}
 	if(i == 1024) {
-		interrupts_on();
+		interrupts_set(enabled);
 		return THREAD_NOMORE; //if we couldn't find anything available after 1024 threads, then we return THREAD_NOMORE;
 	}
 	//set up the thread
@@ -337,7 +337,7 @@ thread_create(void (*fn) (void *), void *parg)
 	all_threads[i].not_empty = 1;
 	all_threads[i].setcontext_called = 0;
 	if(all_threads[i].sp == NULL) {
-		interrupts_on();
+		interrupts_set(enabled);
 		return THREAD_NOMEMORY; //if malloc returns NULL, it means no space left to allocate stack
 	}
 	add_to_ready(q_ready, i); //add the thread to the ready queue
@@ -349,7 +349,7 @@ thread_create(void (*fn) (void *), void *parg)
 	all_threads[i].t_context.uc_mcontext.gregs[REG_RDI] = (long long int) fn;
 	all_threads[i].t_context.uc_mcontext.gregs[REG_RSI] = (long long int) parg;
 	all_threads[i].t_context.uc_mcontext.gregs[REG_RIP] = (long long int) thread_stub;
-	interrupts_on();
+	interrupts_set(enabled);
 	return(i);
 	return THREAD_FAILED;
 }
@@ -357,7 +357,7 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
-	interrupts_off();
+	int enabled = interrupts_off();
 	int found = 0;
 
 	all_threads[running_tid].setcontext_called = 0;
@@ -375,7 +375,7 @@ thread_yield(Tid want_tid)
 				//make sure only thread is running thread (only possibility anyway)
 				if(q_ready->front->tid == running_tid) {
 					get_ready(q_ready); //clean up the queue
-					interrupts_on();
+					interrupts_set(enabled);
 					return(THREAD_NONE); //no threads in ready queue
 				}
 			}
@@ -405,17 +405,17 @@ thread_yield(Tid want_tid)
 				//must restore original thread
 				found = get_ready_target(q_ready, running_tid);
 				all_threads[running_tid].state = RUNNING;
-				interrupts_on(); //this might be dangerous
+				interrupts_set(enabled);
 				return(THREAD_INVALID);
 			}
 		}
 	}
 	if(all_threads[running_tid].setcontext_called == 1 && want_tid >= 0) {
 		all_threads[running_tid].setcontext_called = 0;
-		interrupts_on();
+		interrupts_set(enabled);
 		return(want_tid);
 	}
-	interrupts_on();
+	interrupts_set(enabled);
 	return(running_tid);
 	return THREAD_FAILED; //not sure what this does
 }
@@ -424,7 +424,7 @@ void
 thread_exit()
 {
 	//set running thread to new thread from ready queue
-	interrupts_off();
+	int enabled = interrupts_off();
 	add_to_exit(q_exit, running_tid); //add the current running thread to the exit queue
 	all_threads[running_tid].state = EXIT;
 	if(q_ready->count > 0) {
@@ -433,7 +433,7 @@ thread_exit()
 		setcontext(&all_threads[running_tid].t_context);
 	}
 	else {
-		interrupts_on();
+		interrupts_set(enabled);
 		exit(0);
 	}
 }
@@ -441,16 +441,16 @@ thread_exit()
 Tid
 thread_kill(Tid tid)
 {
-	interrupts_off();
+	int enabled = interrupts_off();
 	if(tid < 0 || tid > THREAD_MAX_THREADS - 1) {
-		interrupts_on();
+		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
 	int kill = 0;
 	
 	//return the tid of the thread just killed
 	if(tid == running_tid || all_threads[tid].not_empty == 0) {
-		interrupts_on();
+		interrupts_set(enabled);
 		return THREAD_INVALID; //returns invalid if the thread is the currently running one or does not exist
 	}
 	else {
@@ -462,15 +462,15 @@ thread_kill(Tid tid)
 			//ensures that it isn't something in the exit queue
 			free(all_threads[tid].sp); //free the stack
 			all_threads[tid] = all_threads[THREAD_MAX_THREADS]; //a zero-initialized structure to zero out killed thread structures
-			interrupts_on();
+			interrupts_set(enabled);
 			return(tid);
 		}
 		else {
-			interrupts_on();
+			interrupts_set(enabled);
 			return THREAD_INVALID; //in the exit queue, so it wil be killed later
 		}
 	}
-	interrupts_on();
+	interrupts_set(enabled);
 	return THREAD_FAILED;
 }
 
@@ -505,10 +505,13 @@ wait_queue_destroy(struct wait_queue *wq)
 Tid
 thread_sleep(struct wait_queue *queue)
 {
+	int enabled = interrupts_off();
 	if(queue == NULL) {
+		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
 	if(q_ready->count == 0) {
+		interrupts_set(enabled);
 		return THREAD_NONE;
 	}
 	else {
@@ -518,8 +521,10 @@ thread_sleep(struct wait_queue *queue)
 		Tid tid = get_ready(q_ready);
 		running_tid = tid;
 		all_threads[running_tid].state = RUNNING;
+		interrupts_set(enabled);
 		setcontext(&all_threads[running_tid].t_context);
 	}	
+	interrupts_set(enabled);
 	return THREAD_FAILED;
 }
 
@@ -528,13 +533,16 @@ thread_sleep(struct wait_queue *queue)
 int
 thread_wakeup(struct wait_queue *queue, int all)
 {
+	int enabled = interrupts_off();
 	int count = 0;
 	//return invalid if queue does not exist
 	if(queue == NULL) {
+		interrupts_set(enabled);
 		return 0;
 	}
 	//check this later, to avoid seg fault for checking a null queue
 	if(queue->count == 0) {
+		interrupts_set(enabled);
 		return 0;
 	}
 	//if we want to wake up all suspended threads
@@ -550,6 +558,7 @@ thread_wakeup(struct wait_queue *queue, int all)
 		add_to_ready(q_ready, get_wait(queue));
 		count++;
 	}
+	interrupts_set(enabled);
 	return count;
 }
 
