@@ -307,9 +307,9 @@ Tid
 thread_id()
 {	
 	//double check to see if the thread is actually in the running state
-	if(all_threads[running_tid].state == RUNNING) {
-		return running_tid;
-	}	
+	//if(all_threads[running_tid].state == RUNNING) {
+	return running_tid;
+	//}	
 	return THREAD_INVALID;
 }
 
@@ -468,10 +468,10 @@ thread_kill(Tid tid)
 		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
-	if(tid == all_threads[running_tid].parent) {
-		interrupts_set(enabled);
-		return THREAD_INVALID;
-	}
+	//if(tid == all_threads[running_tid].parent) {
+	//	interrupts_set(enabled);
+	//	return THREAD_INVALID;
+	//}
 	int kill = 0;
 
 	//return the tid of the thread just killed
@@ -514,7 +514,6 @@ thread_kill(Tid tid)
 struct wait_queue *
 wait_queue_create()
 {
-	int enabled = interrupts_set(0);
 	struct wait_queue *wq;
 
 	wq = malloc(sizeof(struct wait_queue));
@@ -524,8 +523,6 @@ wait_queue_create()
 	wq->count = 0;
 	wq->front = NULL;
 	wq->rear = NULL;
-
-	interrupts_set(enabled);
 
 	return wq;
 }
@@ -703,7 +700,7 @@ lock_destroy(struct lock *lock)
 	enabled = interrupts_set(0);
 	wait_queue_destroy(lock->wq);
 	free(lock);
-	interrupts_set(enabled);
+	interrupts_set(1);
 }
 
 void
@@ -732,6 +729,7 @@ lock_release(struct lock *lock)
 
 struct cv {
 	/* ... Fill this in ... */
+	struct wait_queue *wq;
 };
 
 struct cv *
@@ -742,44 +740,60 @@ cv_create()
 	cv = malloc(sizeof(struct cv));
 	assert(cv);
 
-	TBD();
-
+	cv->wq = wait_queue_create();
+	
 	return cv;
 }
 
 void
 cv_destroy(struct cv *cv)
 {
+	int enabled = interrupts_set(0);
 	assert(cv != NULL);
 
-	TBD();
-
+	wait_queue_destroy(cv->wq);
+	
 	free(cv);
+	interrupts_set(enabled);
 }
 
 void
 cv_wait(struct cv *cv, struct lock *lock)
 {
+	int enabled = interrupts_set(0);
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	if(lock->holder != THREAD_NONE) {
+		lock_release(lock);
+		thread_sleep(cv->wq);
+	}
+	lock_acquire(lock);
+	interrupts_set(enabled);
 }
 
 void
 cv_signal(struct cv *cv, struct lock *lock)
 {
+	int enabled = interrupts_set(0);
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	if(lock->holder == running_tid) {
+		thread_wakeup(cv->wq, 0);
+	}
+	interrupts_set(enabled);
 }
 
 void
 cv_broadcast(struct cv *cv, struct lock *lock)
 {
+	int enabled = interrupts_set(0);
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	if(lock->holder == running_tid) {
+		thread_wakeup(cv->wq, 1);
+	}
+	interrupts_set(enabled);
 }
