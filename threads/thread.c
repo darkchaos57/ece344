@@ -23,6 +23,7 @@ struct thread {
 	int setcontext_called;
 	int sleep_flag;
 	int should_exit;
+	int parent;
 	struct wait_queue *wq;
 	ucontext_t t_context; //the current context of the thread
 };
@@ -339,6 +340,7 @@ thread_create(void (*fn) (void *), void *parg)
 	all_threads[i].sp = (void *)malloc(THREAD_MIN_STACK); //allocate space for new stack
 	all_threads[i].not_empty = 1;
 	all_threads[i].sleep_flag = 0;
+	all_threads[i].parent = running_tid;
 	all_threads[i].setcontext_called = 0;
 	if(all_threads[i].sp == NULL) {
 		interrupts_set(enabled);
@@ -442,9 +444,9 @@ thread_exit()
 	all_threads[running_tid].state = EXIT;
 	//wake up all threads from the wait queue and free the wait queue
 	if(all_threads[running_tid].wq != NULL) {
-		//printf("I am exiting as Tid: %d\n", running_tid);
 		thread_wakeup(all_threads[running_tid].wq, 1);
-		wait_queue_destroy(all_threads[running_tid].wq);
+		//printf("I just freed %d threads and there are %d threads in the ready queue.\n", ret, q_ready->count);
+		free(all_threads[running_tid].wq);
 	}
 	if(q_ready->count > 0) {
 		running_tid = get_ready(q_ready);
@@ -461,12 +463,17 @@ Tid
 thread_kill(Tid tid)
 {
 	int enabled = interrupts_set(0);
+	//printf("I want to kill %d\n", tid);
 	if(tid < 0 || tid > THREAD_MAX_THREADS - 1) {
 		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
+	if(tid == all_threads[running_tid].parent) {
+		interrupts_set(enabled);
+		return THREAD_INVALID;
+	}
 	int kill = 0;
-	
+
 	//return the tid of the thread just killed
 	if(tid == running_tid || all_threads[tid].not_empty == 0) {
 		interrupts_set(enabled);
@@ -476,9 +483,11 @@ thread_kill(Tid tid)
 		if(all_threads[tid].state == WAIT) {
 			//if a thread is marked to kill but is asleep, set should_exit to 1
 			all_threads[tid].should_exit = 1;
+			interrupts_set(enabled);
+			return tid;
 		}
 		//make sure we don't access an empty list
-		if(q_ready->count > 0) {
+		else if(q_ready->count > 0) {
 			kill = get_ready_target(q_ready, tid);	//fetch the target out of the ready queue to be killed
 		}
 		if(kill) {
@@ -505,6 +514,7 @@ thread_kill(Tid tid)
 struct wait_queue *
 wait_queue_create()
 {
+	int enabled = interrupts_set(0);
 	struct wait_queue *wq;
 
 	wq = malloc(sizeof(struct wait_queue));
@@ -515,22 +525,29 @@ wait_queue_create()
 	wq->front = NULL;
 	wq->rear = NULL;
 
+	interrupts_set(enabled);
+
 	return wq;
 }
 
 void
 wait_queue_destroy(struct wait_queue *wq)
 {
-	while(wq->count > 0) {
-		get_wait(wq);
+	int enabled = interrupts_set(0);
+	if(wq != NULL) {
+		while(wq->count > 0) {
+			get_wait(wq);
+		}
+		free(wq);
 	}
-	free(wq);
+	interrupts_set(enabled);
 }
 
 Tid
 thread_sleep(struct wait_queue *queue)
 {
 	int enabled = interrupts_set(0);
+	all_threads[running_tid].state = RUNNING;
 	int ret = 0;
 	if(queue == NULL) {
 		interrupts_set(enabled);
@@ -540,13 +557,13 @@ thread_sleep(struct wait_queue *queue)
 		interrupts_set(enabled);
 		return THREAD_NONE;
 	}
-	else if(all_threads[running_tid].state == RUNNING) {
+	if(all_threads[running_tid].state == RUNNING) {
 		all_threads[running_tid].state = WAIT;
 		all_threads[running_tid].sleep_flag = 1;
 		add_to_wait(queue, running_tid);
 		//printf("I just added Tid: %d to my wait queue \n", running_tid);
 		ret = thread_yield(THREAD_ANY);
-	}	
+	}
 	interrupts_set(enabled);
 	return ret;
 	return THREAD_FAILED;
@@ -611,7 +628,7 @@ Tid
 thread_wait(Tid tid)
 {
 	int enabled = interrupts_set(0);
-	if(tid <= 0 || tid > THREAD_MAX_THREADS - 1 || tid == running_tid) {
+	if(tid < 0 || tid > THREAD_MAX_THREADS - 1 || tid == running_tid) {
 		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
@@ -619,16 +636,16 @@ thread_wait(Tid tid)
 		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
-	if(all_threads[running_tid].wq != NULL) {
-		if(all_threads[running_tid].wq->front->tid == tid) {
-			interrupts_set(enabled);
-			return THREAD_INVALID;
-		}
+	//if there is already a wait queue on tid
+	if(all_threads[tid].wq != NULL) {
+		thread_sleep(all_threads[tid].wq);
+		interrupts_set(enabled);
+		return tid;
 	}
 	
 	//creates a wait queue associated with the target thread
 	all_threads[tid].wq = wait_queue_create();
-	//printf("I just created a wait queue in Tid: %d\n", tid);
+	//printf("I, %d, just created a wait queue in Tid: %d\n", running_tid, tid);
 
 	//sleep the running thread in this wait queue
 	thread_sleep(all_threads[tid].wq);
@@ -641,11 +658,11 @@ thread_wait(Tid tid)
 		if(!all_threads[running_tid].setcontext_called) {
 			all_threads[running_tid].setcontext_called = 1;
 			running_tid = get_ready(q_ready);
+			all_threads[running_tid].state = RUNNING;
 			setcontext(&all_threads[running_tid].t_context);
 		}
-	}
-	//printf("My child has exited so I am back, %d\n", running_tid);*/
-	all_threads[running_tid].state = RUNNING;
+	}*/
+	//printf("My child has exited so I am back, %d\n", running_tid);
 	interrupts_set(enabled);
 	return tid;
 	return 0;
