@@ -307,9 +307,7 @@ Tid
 thread_id()
 {	
 	//double check to see if the thread is actually in the running state
-	//if(all_threads[running_tid].state == RUNNING) {
 	return running_tid;
-	//}	
 	return THREAD_INVALID;
 }
 
@@ -324,7 +322,6 @@ thread_create(void (*fn) (void *), void *parg)
 		free(all_threads[to_free].sp);
 		all_threads[to_free] = all_threads[THREAD_MAX_THREADS];
 	}
-
 	int i = 0;
 	//loop until we find a tid that is NULL (available)
 	while(all_threads[i].not_empty == 1 && i < 1024) {
@@ -468,12 +465,7 @@ thread_kill(Tid tid)
 		interrupts_set(enabled);
 		return THREAD_INVALID;
 	}
-	//if(tid == all_threads[running_tid].parent) {
-	//	interrupts_set(enabled);
-	//	return THREAD_INVALID;
-	//}
 	int kill = 0;
-
 	//return the tid of the thread just killed
 	if(tid == running_tid || all_threads[tid].not_empty == 0) {
 		interrupts_set(enabled);
@@ -565,7 +557,6 @@ thread_sleep(struct wait_queue *queue)
 	return ret;
 	return THREAD_FAILED;
 }
-
 /* when the 'all' parameter is 1, wakeup all threads waiting in the queue.
  * returns whether a thread was woken up on not. */
 int
@@ -646,19 +637,6 @@ thread_wait(Tid tid)
 
 	//sleep the running thread in this wait queue
 	thread_sleep(all_threads[tid].wq);
-	/*try local implementation of thread sleep
-	if(q_ready->count > 0) {
-		all_threads[running_tid].state = WAIT;
-		add_to_wait(all_threads[tid].wq, running_tid);
-		all_threads[running_tid].sleep_flag = 1;
-		getcontext(&all_threads[running_tid].t_context);
-		if(!all_threads[running_tid].setcontext_called) {
-			all_threads[running_tid].setcontext_called = 1;
-			running_tid = get_ready(q_ready);
-			all_threads[running_tid].state = RUNNING;
-			setcontext(&all_threads[running_tid].t_context);
-		}
-	}*/
 	//printf("My child has exited so I am back, %d\n", running_tid);
 	interrupts_set(enabled);
 	return tid;
