@@ -7,10 +7,15 @@ struct server {
 	int max_requests;
 	int max_cache_size;
 	int exiting;
+	int *buffer;
+	pthread_t *worker_threads;
 	/* add any other parameters you need */
 };
 
 /* static functions */
+int in, out, requests = 0;
+pthread_mutex_t lock;
+pthread_cond_t full, empty;
 
 /* initialize file data */
 static struct file_data *
@@ -64,6 +69,10 @@ out:
 }
 
 /* entry point functions */
+void *stub(void *sv) {
+	return NULL;
+}
+
 
 struct server *
 server_init(int nr_threads, int max_requests, int max_cache_size)
@@ -77,7 +86,15 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->exiting = 0;
 	
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
-		TBD();
+		if(max_requests > 0) {
+			sv->buffer = (int *)malloc(sizeof(int) * (max_requests+1)); //create a queue of max_request size when max_requests > 0
+		}
+		if(nr_threads > 0) {
+			sv->worker_threads = (pthread_t *)malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
+			for(int i = 0; i < nr_threads; i++) {
+				pthread_create(&(sv->worker_threads[i]), NULL, stub, sv); //create n_threads and initialize them in stub
+			}
+		}
 	}
 
 	/* Lab 4: create queue of max_request size when max_requests > 0 */
