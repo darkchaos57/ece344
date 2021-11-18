@@ -14,8 +14,9 @@ struct server {
 
 /* static functions */
 int in, out, requests = 0;
-pthread_mutex_t lock;
-pthread_cond_t full, empty;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t full = PTHREAD_COND_INITIALIZER;
+pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
 
 /* initialize file data */
 static struct file_data *
@@ -69,7 +70,24 @@ out:
 }
 
 /* entry point functions */
-void *stub(void *sv) {
+void *stub(struct server *sv) {
+	while(1) {
+		pthread_mutex_lock(&lock);
+		while(requests == 0) {
+			pthread_cond_wait(&empty, &lock);
+			if(sv->exiting) {
+				pthread_mutex_unlock(&lock);
+				pthread_exit(NULL);
+			}
+		}
+		int connfd = sv->buffer[out];
+		out++;
+		out = out % sv->max_requests;
+		requests--;
+		pthread_cond_signal(&full);
+		pthread_mutex_unlock(&lock);
+		do_server_request(sv, connfd);
+	}
 	return NULL;
 }
 
@@ -87,12 +105,12 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
 		if(max_requests > 0) {
-			sv->buffer = (int *)malloc(sizeof(int) * (max_requests+1)); //create a queue of max_request size when max_requests > 0
+			sv->buffer = (int *)malloc(sizeof(int) * (max_requests + 1)); //create a queue of max_request size when max_requests > 0
 		}
 		if(nr_threads > 0) {
 			sv->worker_threads = (pthread_t *)malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
 			for(int i = 0; i < nr_threads; i++) {
-				pthread_create(&(sv->worker_threads[i]), NULL, stub, sv); //create n_threads and initialize them in stub
+				pthread_create(&(sv->worker_threads[i]), NULL, (void *)&stub, sv); //create n_threads and initialize them in stub
 			}
 		}
 	}
@@ -114,7 +132,20 @@ server_request(struct server *sv, int connfd)
 	} else {
 		/*  Save the relevant info in a buffer and have one of the
 		 *  worker threads do the work. */
-		TBD();
+		pthread_mutex_lock(&lock);
+		while(requests == sv->max_requests) {
+			pthread_cond_wait(&full, &lock);
+			if(sv->exiting) {
+				pthread_mutex_unlock(&lock);
+				pthread_exit(NULL);
+			}
+		}
+		sv->buffer[in] = connfd; //save the request into the buffer
+		in++;
+		in = in % sv->max_requests; //in case we need to loop back to the 0th position
+		requests++;
+		pthread_cond_signal(&empty); //let the initialized threads know that there is a new request that came in
+		pthread_mutex_unlock(&lock);
 	}
 }
 
@@ -126,7 +157,19 @@ server_exit(struct server *sv)
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
 	sv->exiting = 1;
+	pthread_cond_broadcast(&full);
+	pthread_cond_broadcast(&empty);
+
+	for(int i = 0; i < sv->nr_threads; i++) {
+		pthread_join(sv->worker_threads[i], NULL);
+	}
 
 	/* make sure to free any allocated resources */
+	if(sv->nr_threads > 0) {
+		free(sv->worker_threads);
+	}
+	if(sv->max_requests > 0) {
+		free(sv->buffer);
+	}
 	free(sv);
 }

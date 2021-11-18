@@ -1,0 +1,12 @@
+Running tests for Lab 4
+Output being sent to tester.log, tester.out
+Running: /cad2/ece344f/tester/scripts/lab4-01-webserver.py -v
+webserver test
+starting server at port 49629
+STARTING PROGRAM: ./run-experiment 49629
+EXPECTING: Threads experiment done.
+
+Mark for webserver test is 0 out of 48
+FAIL
+
+You have received 0 marks out of a total of 48 marks.

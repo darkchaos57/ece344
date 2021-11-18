@@ -1,66 +1,6 @@
-Fri Oct 29 18:43:54 EDT 2021
+Thu Nov 18 01:45:31 EST 2021
 Running threads experiment. Output goes to plot-threads.out
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
 Threads experiment done.
-Fri Oct 29 18:44:48 EDT 2021
+Thu Nov 18 01:50:05 EST 2021
 Running requests experiment. Output goes to plot-requests.out
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-open_clientfd: line 266: connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)): Connection refused
-error: run 1: ./client -t 127.0.0.1 45543 100 10 fileset_dir.idx
-forcing server shutdown
 Requests experiment done.
