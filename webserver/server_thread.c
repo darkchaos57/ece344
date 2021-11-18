@@ -73,11 +73,12 @@ out:
 void *stub(struct server *sv) {
 	while(1) {
 		pthread_mutex_lock(&lock);
+		//wait when empty
 		while(requests == 0) {
 			pthread_cond_wait(&empty, &lock);
 			if(sv->exiting) {
 				pthread_mutex_unlock(&lock);
-				pthread_exit(NULL);
+				pthread_exit(sv);
 			}
 		}
 		int connfd = sv->buffer[out];
@@ -88,7 +89,6 @@ void *stub(struct server *sv) {
 		pthread_mutex_unlock(&lock);
 		do_server_request(sv, connfd);
 	}
-	return NULL;
 }
 
 
@@ -133,11 +133,12 @@ server_request(struct server *sv, int connfd)
 		/*  Save the relevant info in a buffer and have one of the
 		 *  worker threads do the work. */
 		pthread_mutex_lock(&lock);
+		//wait when full
 		while(requests == sv->max_requests) {
 			pthread_cond_wait(&full, &lock);
 			if(sv->exiting) {
 				pthread_mutex_unlock(&lock);
-				pthread_exit(NULL);
+				pthread_exit(sv);
 			}
 		}
 		sv->buffer[in] = connfd; //save the request into the buffer
@@ -162,6 +163,7 @@ server_exit(struct server *sv)
 
 	for(int i = 0; i < sv->nr_threads; i++) {
 		pthread_join(sv->worker_threads[i], NULL);
+		free(&sv->worker_threads[i]); //should be okay since pthread_join returns after thread has exitted
 	}
 
 	/* make sure to free any allocated resources */
