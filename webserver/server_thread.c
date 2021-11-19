@@ -88,7 +88,7 @@ void *stub(struct server *sv) {
 		pthread_cond_signal(&full);
 		pthread_mutex_unlock(&lock);
 		do_server_request(sv, connfd);
-	}
+	} //ensures these threads continue to service requests until exit
 }
 
 
@@ -139,7 +139,7 @@ server_request(struct server *sv, int connfd)
 			if(sv->exiting) {
 				pthread_mutex_unlock(&lock);
 				pthread_exit(sv);
-			}
+			} //if broadcast is called in thread_exit, this will let all threads release the lock and exit themselves
 		}
 		sv->buffer[in] = connfd; //save the request into the buffer
 		in++;
@@ -161,8 +161,11 @@ server_exit(struct server *sv)
 	pthread_cond_broadcast(&full);
 	pthread_cond_broadcast(&empty);
 
+	int ret;
+
 	for(int i = 0; i < sv->nr_threads; i++) {
-		pthread_join(sv->worker_threads[i], NULL);
+		ret = pthread_join(sv->worker_threads[i], NULL);
+		assert(!ret);
 	}
 
 	/* make sure to free any allocated resources */

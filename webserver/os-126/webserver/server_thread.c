@@ -163,7 +163,6 @@ server_exit(struct server *sv)
 
 	for(int i = 0; i < sv->nr_threads; i++) {
 		pthread_join(sv->worker_threads[i], NULL);
-		free(&sv->worker_threads[i]); //should be okay since pthread_join returns after thread has exitted
 	}
 
 	/* make sure to free any allocated resources */

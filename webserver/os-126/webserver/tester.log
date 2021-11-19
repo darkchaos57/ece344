@@ -1,33 +1,6 @@
-Thu Nov 18 02:46:11 EST 2021
+Thu Nov 18 22:26:25 EST 2021
 Running threads experiment. Output goes to plot-threads.out
-free(): double free detected in tcache 2
-./run-one-experiment: line 70:  4129 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
-server did not shutdown cleanly
-forcing server shutdown
-free(): invalid pointer
-./run-one-experiment: line 70:  4266 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
-server did not shutdown cleanly
-forcing server shutdown
-server did not shutdown cleanly
-forcing server shutdown
-server did not shutdown cleanly
-forcing server shutdown
-server did not shutdown cleanly
-forcing server shutdown
-free(): invalid pointer
-./run-one-experiment: line 70:  4782 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 Threads experiment done.
-Thu Nov 18 02:51:09 EST 2021
+Thu Nov 18 22:30:33 EST 2021
 Running requests experiment. Output goes to plot-requests.out
-free(): invalid pointer
-./run-one-experiment: line 70:  4978 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
-free(): invalid pointer
-./run-one-experiment: line 70:  5052 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
-server did not shutdown cleanly
-forcing server shutdown
-free(): invalid pointer
-./run-one-experiment: line 70:  5201 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
-./run-one-experiment: line 70:  5275 Segmentation fault      ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
-server did not shutdown cleanly
-forcing server shutdown
 Requests experiment done.
