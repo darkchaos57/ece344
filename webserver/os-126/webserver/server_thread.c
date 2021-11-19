@@ -7,13 +7,14 @@ struct server {
 	int max_requests;
 	int max_cache_size;
 	int exiting;
-	int *buffer;
+	int *buffer; //circular buffer implementation
 	pthread_t *worker_threads;
 	/* add any other parameters you need */
 };
 
 /* static functions */
-int in, out, requests = 0;
+int in, out, requests = 0; //requests keeps track of number of requests so we don't overwrite our circular buffer
+//static initializations, because our parameters are known
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t full = PTHREAD_COND_INITIALIZER;
 pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
@@ -70,22 +71,28 @@ out:
 }
 
 /* entry point functions */
+
+//stub function is entry point for threads, which waits until there are requests signalled by server_request as they come in
+//when that happens, we save the data in the buffer and then increment the buffer out index
+//then we decrement the number of requests waiting in the buffer, signal that the buffer is no longer full, and then do the server request
 void *stub(struct server *sv) {
+	//this loop ensures that all requests are handled until the thread is specifically called to exit
 	while(1) {
 		pthread_mutex_lock(&lock);
 		//wait when empty
 		while(requests == 0) {
 			pthread_cond_wait(&empty, &lock);
+			//if thread is called to exit, need to release lock and exit itself
 			if(sv->exiting) {
 				pthread_mutex_unlock(&lock);
-				pthread_exit(sv);
+				pthread_exit(sv); //i think this is impacting my performance as i am getting upper bound performance times
 			}
 		}
 		int connfd = sv->buffer[out];
-		out++;
-		out = out % sv->max_requests;
+		out++; //increment the buffer output index (since this index has finished reading)
+		out = out % sv->max_requests; //circular buffer indexing
 		requests--;
-		pthread_cond_signal(&full);
+		pthread_cond_signal(&full); //signal that the buffer is no longer full
 		pthread_mutex_unlock(&lock);
 		do_server_request(sv, connfd);
 	} //ensures these threads continue to service requests until exit
@@ -105,7 +112,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
 		if(max_requests > 0) {
-			sv->buffer = (int *)malloc(sizeof(int) * (max_requests + 1)); //create a queue of max_request size when max_requests > 0
+			sv->buffer = (int *)malloc(sizeof(int) * (max_requests + 1)); //create a circular buffer of max_request (static) size when max_requests > 0
 		}
 		if(nr_threads > 0) {
 			sv->worker_threads = (pthread_t *)malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
@@ -124,6 +131,8 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	return sv;
 }
 
+//continues saving data into buffers until it is full. Once it is full, signals to waiting worker threads that they can begin processing requests
+//increments requests to keep track of number of requests in buffer so that the buffer does not overflow and lose data
 void
 server_request(struct server *sv, int connfd)
 {
@@ -133,9 +142,11 @@ server_request(struct server *sv, int connfd)
 		/*  Save the relevant info in a buffer and have one of the
 		 *  worker threads do the work. */
 		pthread_mutex_lock(&lock);
-		//wait when full
+		//wait when full (using while instead of if is cleaner as per lecture)
 		while(requests == sv->max_requests) {
 			pthread_cond_wait(&full, &lock);
+			//necessary check, because if thread is waiting for signal, but the server is planning to exit,
+			//this thread will need to return and release its lock in order for join to complete
 			if(sv->exiting) {
 				pthread_mutex_unlock(&lock);
 				pthread_exit(sv);
@@ -143,7 +154,7 @@ server_request(struct server *sv, int connfd)
 		}
 		sv->buffer[in] = connfd; //save the request into the buffer
 		in++;
-		in = in % sv->max_requests; //in case we need to loop back to the 0th position
+		in = in % sv->max_requests; //circular buffer indexing
 		requests++;
 		pthread_cond_signal(&empty); //let the initialized threads know that there is a new request that came in
 		pthread_mutex_unlock(&lock);
@@ -158,13 +169,18 @@ server_exit(struct server *sv)
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
 	sv->exiting = 1;
+	//broadcasts to all threads with full or empty condition variables that we are exiting, so they can wakeup
+	//when they are context switched to
 	pthread_cond_broadcast(&full);
 	pthread_cond_broadcast(&empty);
 
 	int ret;
-
+	
+	//makes sure every thread successfully exits before freeing data, and then letting main thread exit
 	for(int i = 0; i < sv->nr_threads; i++) {
+		//join will wait for thread to exit (return) before continuing, so loop will make sure all threads exit
 		ret = pthread_join(sv->worker_threads[i], NULL);
+		//checks that join indeed returns 0 without any errors
 		assert(!ret);
 	}
 

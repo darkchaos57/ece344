@@ -89,13 +89,13 @@ void *stub(struct server *sv) {
 			}
 		}
 		int connfd = sv->buffer[out];
-		out++; //increment the buffer output index (since this index has finished reading)
+		out++;
 		out = out % sv->max_requests; //circular buffer indexing
 		requests--;
 		pthread_cond_signal(&full); //signal that the buffer is no longer full
 		pthread_mutex_unlock(&lock);
 		do_server_request(sv, connfd);
-	} //ensures these threads continue to service requests until exit
+	}
 }
 
 
@@ -185,11 +185,7 @@ server_exit(struct server *sv)
 	}
 
 	/* make sure to free any allocated resources */
-	if(sv->nr_threads > 0) {
-		free(sv->worker_threads);
-	}
-	if(sv->max_requests > 0) {
-		free(sv->buffer);
-	}
+	free(sv->worker_threads);
+	free(sv->buffer);
 	free(sv);
 }
