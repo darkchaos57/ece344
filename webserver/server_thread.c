@@ -117,7 +117,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 		if(nr_threads > 0) {
 			sv->worker_threads = (pthread_t *)malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
 			for(int i = 0; i < nr_threads; i++) {
-				pthread_create(&(sv->worker_threads[i]), NULL, (void *)&stub, sv); //create n_threads and initialize them in stub
+				pthread_create(&(sv->worker_threads[i]), NULL, (void *)&stub, (void *)sv); //create n_threads and initialize them in stub
 			}
 		}
 	}
@@ -185,7 +185,11 @@ server_exit(struct server *sv)
 	}
 
 	/* make sure to free any allocated resources */
-	free(sv->worker_threads);
-	free(sv->buffer);
+	if(sv->nr_threads > 0) {
+		free(sv->worker_threads);
+	}
+	if(sv->max_requests > 0) {
+		free(sv->buffer);
+	}
 	free(sv);
 }
