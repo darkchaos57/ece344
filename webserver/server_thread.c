@@ -15,17 +15,11 @@ struct server {
 /* static functions */
 int in, out, requests = 0; //requests keeps track of number of requests so we don't overwrite our circular buffer
 //static initializations, because our parameters are known
-pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lock, hash_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t full = PTHREAD_COND_INITIALIZER;
 pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
 
-//hash function
-//hash table
-//cache_lookup(file)
-//cache_insert(file)
-//cache_evict(amount_to_evict)
-
-//hash table
+//cache
 typedef struct cache_hash {
 	char *file_name;
 	char *file_data;
@@ -34,6 +28,11 @@ typedef struct cache_hash {
 //by default we assume the hash table to have max_cache_size number of indices, as there can't be more files than the number of bytes of the cache
 struct hash_table {
 	cache_hash **entry;
+};
+
+struct LRU_queue {
+	unsigned long hash_key;
+	struct LRU_elements *next;
 };
 
 //hash function from cse.yorku.ca/~oz/hash.html
@@ -70,6 +69,7 @@ void cache_insert(struct hash_table *hash_table, struct file_data *data, int max
 			cache_insert(hash_table, data, max_cache_size, 0);
 		}
 	}
+
 }
 
 //looksup the cache based on file name (by hashing it)
@@ -92,12 +92,14 @@ unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data
 }
 
 //evict the selected file name from the hash table
-void cache_evict(struct hash_table *hash_table, int max_cache_size, int key) {
-	//delete the data at the hash table entry
+void cache_evict(int file_size) {
+	//find key at head of LRU queue, pop off the queue, delete and free elements of that key in hash table
+	//remember size of file that was removed, check to see if its larger than file_size
+	//if not, that means we need to continue evicting (use cache_evict in a loop)
 }
 
 //LRU algorithm to find which cached file to evict
-void LRU(struct hash_table *hash_table, int max_cache_size) {
+/*void LRU(struct hash_table *hash_table, int max_cache_size) {
 	//use the LRU algorithm to identify the file that should be evicted, and then find its key value
 	char *file_to_evict = NULL; //this will be populated by the algorithm
 	unsigned long key = hash_function(file_to_evict, max_cache_size);
@@ -113,7 +115,7 @@ void LRU(struct hash_table *hash_table, int max_cache_size) {
 	//found the key value at this point that corresponds with the file we want to evict
 	//evict it
 	cache_evict(hash_table, max_cache_size, key);
-}
+}*/
 
 
 /* initialize file data */
@@ -215,6 +217,15 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 			sv->worker_threads = (pthread_t *)malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
 			for(int i = 0; i < nr_threads; i++) {
 				pthread_create(&(sv->worker_threads[i]), NULL, (void *)&stub, (void *)sv); //create n_threads and initialize them in stub
+			}
+		}
+		if(max_cache_size > 0) {
+			struct hash_table * hash_table;
+			hash_table = malloc(sizeof(struct hash_table));
+			hash_table->entry = malloc(sizeof(struct cache_hash *) * max_cache_size);
+			//populate hash table
+			for (int i = 0; i < max_cache_size; i++) {
+				hash_table->entry[i] = NULL;
 			}
 		}
 	}
