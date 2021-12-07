@@ -19,6 +19,103 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t full = PTHREAD_COND_INITIALIZER;
 pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
 
+//hash function
+//hash table
+//cache_lookup(file)
+//cache_insert(file)
+//cache_evict(amount_to_evict)
+
+//hash table
+typedef struct cache_hash {
+	char *file_name;
+	char *file_data;
+}cache_hash;
+
+//by default we assume the hash table to have max_cache_size number of indices, as there can't be more files than the number of bytes of the cache
+struct hash_table {
+	cache_hash **entry;
+};
+
+//hash function from cse.yorku.ca/~oz/hash.html
+unsigned long hash_function(char *str, long table_size) {
+	unsigned long hash = 5381;
+	int c = 0;
+	
+	while ((c = *str++)) {
+		hash = ((hash << 5) + hash) + c;
+	}
+	return hash % table_size;
+}
+
+//inserts file name and file data to hashed location in hash table, which makes up our cache
+void cache_insert(struct hash_table *hash_table, struct file_data *data, int max_cache_size, unsigned long key) {
+	//there can't be more than max_cache_size number of files in the cache, unless every file is 1 byte, so this is reasonable
+	//unsigned long key = hash_fddunction(data->file_name, max_cache_size); //hash the file name
+	if(hash_table->entry[key] == NULL) {
+		hash_table->entry[key] = (cache_hash *)malloc(sizeof(cache_hash));
+	}
+	if(hash_table->entry[key]->file_name == NULL) {
+		//store the data into the hash table entries
+		hash_table->entry[key]->file_name = (char *)malloc(strlen(data->file_name + 1)*sizeof(char));
+		hash_table->entry[key]->file_data = (char *)malloc((data->file_size + 1)*sizeof(char));
+		strncpy(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name));
+		strncpy(hash_table->entry[key]->file_data, data->file_buf, strlen(data->file_buf));
+	}
+	else {
+		//resolves collisions by finding next available key
+		if(key + 1 < max_cache_size) {
+			cache_insert(hash_table, data, max_cache_size, key + 1);
+		}
+		else {
+			cache_insert(hash_table, data, max_cache_size, 0);
+		}
+	}
+}
+
+//looksup the cache based on file name (by hashing it)
+unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data, int max_cache_size) {
+	unsigned long key = hash_function(data->file_name, max_cache_size);
+	if(strncmp(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name)) == 0) {
+		//do something with the found cache
+	}
+	else {
+		//walk the hash table as if collisions had happened until cache is found
+		if(key + 1 < max_cache_size) {
+			cache_insert(hash_table, data, max_cache_size, key + 1);
+		}
+		else {
+			cache_insert(hash_table, data, max_cache_size, 0);
+		}
+	}
+	return key;
+
+}
+
+//evict the selected file name from the hash table
+void cache_evict(struct hash_table *hash_table, int max_cache_size, int key) {
+	//delete the data at the hash table entry
+}
+
+//LRU algorithm to find which cached file to evict
+void LRU(struct hash_table *hash_table, int max_cache_size) {
+	//use the LRU algorithm to identify the file that should be evicted, and then find its key value
+	char *file_to_evict = NULL; //this will be populated by the algorithm
+	unsigned long key = hash_function(file_to_evict, max_cache_size);
+	//if key and file to evict don't match (due to collision from insert)
+	while(strncmp(hash_table->entry[key]->file_name, file_to_evict, strlen(file_to_evict)) != 0) {
+		if(key + 1 < max_cache_size) {
+			key++;
+		}
+		else { 
+			key = 0;
+		}
+	}
+	//found the key value at this point that corresponds with the file we want to evict
+	//evict it
+	cache_evict(hash_table, max_cache_size, key);
+}
+
+
 /* initialize file data */
 static struct file_data *
 file_data_init(void)
