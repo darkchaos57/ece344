@@ -1,0 +1,403 @@
+==23688== Memcheck, a memory error detector
+==23688== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==23688== Using Valgrind-3.14.0-353a3587bb-20181007X and LibVEX; rerun with -h for copyright info
+==23688== Command: ./server 5003 8 16 10000
+==23688== Parent PID: 18737
+==23688== 
+--23688-- 
+--23688-- Valgrind options:
+--23688--    --leak-check=full
+--23688--    --show-leak-kinds=all
+--23688--    --track-origins=yes
+--23688--    --verbose
+--23688--    --log-file=valgrind-out.txt
+--23688-- Contents of /proc/version:
+--23688--   Linux version 4.19.0-18-amd64 (debian-kernel@lists.debian.org) (gcc version 8.3.0 (Debian 8.3.0-6)) #1 SMP Debian 4.19.208-1 (2021-09-29)
+--23688-- 
+--23688-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-avx-avx2-bmi
+--23688-- Page sizes: currently 4096, max supported 4096
+--23688-- Valgrind library directory: /usr/lib/x86_64-linux-gnu/valgrind
+--23688-- Reading syms from /nfs/ug/homes-1/h/huang906/ece344/webserver/server
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-2.28.so
+--23688--   Considering /usr/lib/debug/.build-id/f2/5dfd7b95be4ba386fd71080accae8c0732b711.debug ..
+--23688--   .. build-id is valid
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/valgrind/memcheck-amd64-linux
+--23688--   Considering /usr/lib/debug/.build-id/32/2e77af97f403c3d34ff09edf60b089e72ec889.debug ..
+--23688--   .. build-id is valid
+--23688--    object doesn't have a dynamic symbol table
+--23688-- Scheduler: using generic scheduler lock implementation.
+--23688-- Reading suppressions file: /usr/lib/x86_64-linux-gnu/valgrind/default.supp
+==23688== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-23688-by-huang906-on-ug180
+==23688== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-23688-by-huang906-on-ug180
+==23688== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-23688-by-huang906-on-ug180
+==23688== 
+==23688== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==23688== don't want to do, unless you know exactly what you're doing,
+==23688== or are doing some strange experiment):
+==23688==   /usr/lib/x86_64-linux-gnu/valgrind/../../bin/vgdb --pid=23688 ...command...
+==23688== 
+==23688== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==23688==   /path/to/gdb ./server
+==23688== and then give GDB the following command
+==23688==   target remote | /usr/lib/x86_64-linux-gnu/valgrind/../../bin/vgdb --pid=23688
+==23688== --pid is optional if only one valgrind process is running
+==23688== 
+--23688-- REDIR: 0x401e2f0 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c9ce2 (vgPlain_amd64_linux_REDIR_FOR_strlen)
+--23688-- REDIR: 0x401e0d0 (ld-linux-x86-64.so.2:index) redirected to 0x580c9cfc (vgPlain_amd64_linux_REDIR_FOR_index)
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_core-amd64-linux.so
+--23688--   Considering /usr/lib/debug/.build-id/34/fbc4cdfbfce1bfc3d2e522a01a050bf724c930.debug ..
+--23688--   .. build-id is valid
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so
+--23688--   Considering /usr/lib/debug/.build-id/ca/bb7898ea982d936cbfadd70ae831c6eb63623f.debug ..
+--23688--   .. build-id is valid
+==23688== WARNING: new redirection conflicts with existing -- ignoring it
+--23688--     old: 0x0401e2f0 (strlen              ) R-> (0000.0) 0x580c9ce2 vgPlain_amd64_linux_REDIR_FOR_strlen
+--23688--     new: 0x0401e2f0 (strlen              ) R-> (2007.0) 0x04838d80 strlen
+--23688-- REDIR: 0x401ab10 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4839e40 (strcmp)
+--23688-- REDIR: 0x401e830 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x483d860 (mempcpy)
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/libm-2.28.so
+--23688--   Considering /usr/lib/debug/.build-id/88/5dda4b4a5cea600e7b5b98c1ad86996c8d2299.debug ..
+--23688--   .. build-id is valid
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/libpthread-2.28.so
+--23688--   Considering /usr/lib/debug/.build-id/e9/1114987a0147bd050addbd591eb8994b29f4b3.debug ..
+--23688--   .. build-id is valid
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/libpopt.so.0.0.0
+--23688--    object doesn't have a symbol table
+--23688-- Reading syms from /usr/lib/x86_64-linux-gnu/libc-2.28.so
+--23688--   Considering /usr/lib/debug/.build-id/18/b9a9a8c523e5cfe5b5d946d605d09242f09798.debug ..
+--23688--   .. build-id is valid
+--23688-- REDIR: 0x4aa7f70 (libc.so.6:memmove) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7160 (libc.so.6:strncpy) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa8250 (libc.so.6:strcasecmp) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa6b70 (libc.so.6:strcat) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7190 (libc.so.6:rindex) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa9890 (libc.so.6:rawmemchr) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4ac2230 (libc.so.6:wmemchr) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4ac1cd0 (libc.so.6:wcscmp) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa80e0 (libc.so.6:mempcpy) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7f10 (libc.so.6:bcmp) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7100 (libc.so.6:strncmp) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa6be0 (libc.so.6:strcmp) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa8040 (libc.so.6:memset) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4ac1ca0 (libc.so.6:wcschr) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa70a0 (libc.so.6:strnlen) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa6c70 (libc.so.6:strcspn) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa82a0 (libc.so.6:strncasecmp) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa6c40 (libc.so.6:strcpy) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa83e0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4ac34d0 (libc.so.6:wcsnlen) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa71c0 (libc.so.6:strpbrk) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa6ba0 (libc.so.6:index) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7070 (libc.so.6:strlen) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aae280 (libc.so.6:memrchr) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa82f0 (libc.so.6:strcasecmp_l) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7ee0 (libc.so.6:memchr) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4ac1db0 (libc.so.6:wcslen) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7460 (libc.so.6:strspn) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa8220 (libc.so.6:stpncpy) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa81f0 (libc.so.6:stpcpy) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa98c0 (libc.so.6:strchrnul) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa8340 (libc.so.6:strncasecmp_l) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4aa7e20 (libc.so.6:strstr) redirected to 0x482b1b0 (_vgnU_ifunc_wrapper)
+--23688-- REDIR: 0x4b7afa0 (libc.so.6:__strrchr_avx2) redirected to 0x4838790 (rindex)
+--23688-- REDIR: 0x4aa3350 (libc.so.6:malloc) redirected to 0x4835710 (malloc)
+--23688-- REDIR: 0x4aa4120 (libc.so.6:calloc) redirected to 0x4837ab0 (calloc)
+==23688== Warning: set address range perms: large range [0x59c8a040, 0xcef8a040) (undefined)
+--23688-- REDIR: 0x4b7b6b0 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x483c8a0 (memmove)
+--23688-- REDIR: 0x4b772d0 (libc.so.6:__rawmemchr_avx2) redirected to 0x483d3c0 (rawmemchr)
+--23688-- REDIR: 0x4b77b60 (libc.so.6:__strcasecmp_avx) redirected to 0x48395d0 (strcasecmp)
+--23688-- REDIR: 0x4b766b0 (libc.so.6:__strcmp_avx2) redirected to 0x4839d00 (strcmp)
+--23688-- REDIR: 0x4b7adb0 (libc.so.6:__strchrnul_avx2) redirected to 0x483d390 (strchrnul)
+--23688-- REDIR: 0x4b7b170 (libc.so.6:__strlen_avx2) redirected to 0x4838c60 (strlen)
+--23688-- REDIR: 0x4aa39a0 (libc.so.6:free) redirected to 0x4836940 (free)
+--23688-- REDIR: 0x4ac0970 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x483da50 (strstr)
+--23688-- REDIR: 0x4b7b690 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x483d4a0 (mempcpy)
+==23688== Thread 4:
+==23688== Conditional jump or move depends on uninitialised value(s)
+==23688==    at 0x10AAFC: cache_insert (server_thread.c:109)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Uninitialised value was created by a heap allocation
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10AADD: cache_insert (server_thread.c:107)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+--23688-- REDIR: 0x4abc730 (libc.so.6:__strncpy_sse2_unaligned) redirected to 0x48392e0 (__strncpy_sse2_unaligned)
+==23688== Invalid write of size 8
+==23688==    at 0x483C933: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4c07258 is 0 bytes after a block of size 8 alloc'd
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10AB52: cache_insert (server_thread.c:112)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+==23688== Invalid write of size 8
+==23688==    at 0x483C93B: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4c07260 is 8 bytes after a block of size 8 alloc'd
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10AB52: cache_insert (server_thread.c:112)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+==23688== Invalid read of size 8
+==23688==    at 0x483C93F: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4be2ce8 is 0 bytes after a block of size 24 alloc'd
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10ADAF: file_data_init (server_thread.c:175)
+==23688==    by 0x10AE29: do_server_request (server_thread.c:198)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+==23688== Invalid write of size 8
+==23688==    at 0x483C943: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4c07268 is 16 bytes after a block of size 8 alloc'd
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10AB52: cache_insert (server_thread.c:112)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+==23688== Invalid read of size 8
+==23688==    at 0x483C924: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4be2cf0 is 8 bytes after a block of size 24 alloc'd
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10ADAF: file_data_init (server_thread.c:175)
+==23688==    by 0x10AE29: do_server_request (server_thread.c:198)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+==23688== Invalid write of size 8
+==23688==    at 0x483C92B: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4c07270 is 16 bytes after a block of size 16 in arena "client"
+==23688== 
+==23688== Invalid read of size 8
+==23688==    at 0x483C92F: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4be2cf8 is 16 bytes after a block of size 24 alloc'd
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C370: Malloc (common.c:20)
+==23688==    by 0x10ADAF: file_data_init (server_thread.c:175)
+==23688==    by 0x10AE29: do_server_request (server_thread.c:198)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+==23688== Invalid read of size 8
+==23688==    at 0x483C937: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4be2d00 is 16 bytes after a block of size 32 in arena "client"
+==23688== 
+==23688== Invalid read of size 2
+==23688==    at 0x483C9D8: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Address 0x4be6750 is 6,544 bytes inside a block of size 8,208 free'd
+==23688==    at 0x48369AB: free (vg_replace_malloc.c:530)
+==23688==    by 0x10C3EF: rio_destroy (common.c:60)
+==23688==    by 0x10C774: Rio_destroy (common.c:199)
+==23688==    by 0x10BC30: request_init (request.c:131)
+==23688==    by 0x10AE3E: do_server_request (server_thread.c:201)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688==  Block was alloc'd at
+==23688==    at 0x483577F: malloc (vg_replace_malloc.c:299)
+==23688==    by 0x10C3A2: rio_init (common.c:48)
+==23688==    by 0x10C73F: Rio_init (common.c:190)
+==23688==    by 0x10BB43: request_init (request.c:117)
+==23688==    by 0x10AE3E: do_server_request (server_thread.c:201)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+==23688== 
+
+valgrind: m_mallocfree.c:307 (get_bszB_as_is): Assertion 'bszB_lo == bszB_hi' failed.
+valgrind: Heap block lo/hi size mismatch: lo = 80, hi = 0.
+This is probably caused by your program erroneously writing past the
+end of a heap block and corrupting heap metadata.  If you fix any
+invalid writes reported by Memcheck, this assertion failure will
+probably go away.  Please try that before reporting this as a bug.
+
+
+host stacktrace:
+==23688==    at 0x580480A4: show_sched_status_wrk (m_libcassert.c:369)
+==23688==    by 0x580481B7: report_and_quit (m_libcassert.c:440)
+==23688==    by 0x58048349: vgPlain_assert_fail (m_libcassert.c:506)
+==23688==    by 0x58052410: get_bszB_as_is (m_mallocfree.c:305)
+==23688==    by 0x58052410: get_bszB (m_mallocfree.c:315)
+==23688==    by 0x58052410: get_pszB (m_mallocfree.c:389)
+==23688==    by 0x58052410: vgPlain_describe_arena_addr (m_mallocfree.c:1592)
+==23688==    by 0x5803DE6A: vgPlain_describe_addr (m_addrinfo.c:187)
+==23688==    by 0x5803CCD6: vgMemCheck_update_Error_extra (mc_errors.c:1187)
+==23688==    by 0x58041DB4: vgPlain_maybe_record_error (m_errormgr.c:823)
+==23688==    by 0x5803C15B: vgMemCheck_record_address_error (mc_errors.c:767)
+==23688==    by 0x58012568: mc_STOREV16 (mc_main.c:5342)
+==23688==    by 0x58012568: vgMemCheck_helperc_STOREV16le (mc_main.c:5372)
+==23688==    by 0x100A0C6A73: ???
+==23688==    by 0x100C102F1F: ???
+==23688==    by 0x100200DA8F: ???
+==23688==    by 0x100C102F07: ???
+==23688==    by 0x100C102F1F: ???
+==23688==    by 0x100C102F2F: ???
+
+sched status:
+  running_tid=4
+
+Thread 1: status = VgTs_WaitSys syscall 7 (lwpid 23688)
+==23688==    at 0x4B0D819: poll (poll.c:29)
+==23688==    by 0x10A708: main (server.c:90)
+client stack range: [0x1FFEFFE000 0x1FFF000FFF] client SP: 0x1FFF0007F0
+valgrind stack range: [0x1008EBC000 0x1008FBBFFF] top usage: 18344 of 1048576
+
+Thread 2: status = VgTs_WaitSys syscall 202 (lwpid 23689)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x4FE3000 0x57E1FFF] client SP: 0x57E1DE8
+valgrind stack range: [0x100B9C0000 0x100BABFFFF] top usage: 13656 of 1048576
+
+Thread 3: status = VgTs_WaitSys syscall 202 (lwpid 23690)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x57E4000 0x5FE2FFF] client SP: 0x5FE2DE8
+valgrind stack range: [0x100BCFF000 0x100BDFEFFF] top usage: 13656 of 1048576
+
+Thread 4: status = VgTs_Runnable (lwpid 23691)
+==23688==    at 0x483C9DB: memmove (vg_replace_strmem.c:1270)
+==23688==    by 0x10ABC7: cache_insert (server_thread.c:114)
+==23688==    by 0x10AF51: do_server_request (server_thread.c:221)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x5FE5000 0x67E3FFF] client SP: 0x67E3E38
+valgrind stack range: [0x100C003000 0x100C102FFF] top usage: 13656 of 1048576
+
+Thread 5: status = VgTs_WaitSys syscall 202 (lwpid 23692)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x67E6000 0x6FE4FFF] client SP: 0x6FE4DE8
+valgrind stack range: [0x100C307000 0x100C406FFF] top usage: 13464 of 1048576
+
+Thread 6: status = VgTs_WaitSys syscall 202 (lwpid 23693)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x6FE7000 0x77E5FFF] client SP: 0x77E5DE8
+valgrind stack range: [0x100C60B000 0x100C70AFFF] top usage: 13656 of 1048576
+
+Thread 7: status = VgTs_WaitSys syscall 202 (lwpid 23694)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x77E8000 0x7FE6FFF] client SP: 0x7FE6DE8
+valgrind stack range: [0x100C90F000 0x100CA0EFFF] top usage: 13656 of 1048576
+
+Thread 8: status = VgTs_WaitSys syscall 202 (lwpid 23695)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x7FE9000 0x87E7FFF] client SP: 0x87E7DE8
+valgrind stack range: [0x100CE14000 0x100CF13FFF] top usage: 13656 of 1048576
+
+Thread 9: status = VgTs_WaitSys syscall 202 (lwpid 23696)
+==23688==    at 0x4A0129C: __lll_lock_wait (lowlevellock.S:103)
+==23688==    by 0x49FA713: pthread_mutex_lock (pthread_mutex_lock.c:80)
+==23688==    by 0x10AE75: do_server_request (server_thread.c:207)
+==23688==    by 0x10B25C: stub (server_thread.c:290)
+==23688==    by 0x49F7FA2: start_thread (pthread_create.c:486)
+==23688==    by 0x4B184CE: clone (clone.S:95)
+client stack range: [0x87EA000 0x8FE8FFF] client SP: 0x8FE8DE8
+valgrind stack range: [0x100D118000 0x100D217FFF] top usage: 13656 of 1048576
+
+
+Note: see also the FAQ in the source distribution.
+It contains workarounds to several common problems.
+In particular, if Valgrind aborted or crashed after
+identifying problems in your program, there's a good chance
+that fixing those problems will prevent Valgrind aborting or
+crashing, especially if it happened in m_mallocfree.c.
+
+If that doesn't help, please report this bug to: www.valgrind.org
+
+In the bug report, send all the above text, the valgrind
+version, and what OS and version you are using.  Thanks.
+

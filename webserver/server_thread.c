@@ -108,13 +108,11 @@ void cache_insert(struct hash_table *hash_table, struct file_data *data, int max
 	}
 	if(hash_table->entry[key]->file_name == NULL) {
 		//store the data into the hash table entries
-		hash_table->entry[key]->file_name = (char *)Malloc(strlen(data->file_name + 1)*sizeof(char));
+		hash_table->entry[key]->file_name = (char *)Malloc(strlen(data->file_name)*sizeof(char));
 		hash_table->entry[key]->file_data = (struct file_data *)Malloc(sizeof(data));
 		strncpy(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name));
 		memcpy(hash_table->entry[key]->file_data, data, data->file_size);
 		add_to_LRU(q_LRU, key);
-		fprintf(stderr, "added to LRU: %ld\n", key);
-
 	}
 	else {
 		//resolves collisions by finding next available key
@@ -128,26 +126,26 @@ void cache_insert(struct hash_table *hash_table, struct file_data *data, int max
 }
 
 //looksup the cache based on file name (by hashing it)
-unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data, int max_cache_size) {
-	unsigned long key = hash_function(data->file_name, max_cache_size);
-	fprintf(stderr, "data's file name: %s\n", data->file_name);
+unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data, int max_cache_size, unsigned long key) {
+	if(key == -1) {
+		//first entry into function
+		key = hash_function(data->file_name, max_cache_size);
+	}
 	if(hash_table->entry[key] == NULL) {
 		//not found
 		return -1;
 	}
-	if(strncmp(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name)) == 0) {
+	else if(strncmp(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name)) == 0) {
 		//do something with the found cache
 		return key;
 	}
 	else {
-		fprintf(stderr, "lookup key: %ld\n", key);
-		fprintf(stderr, "data at key: %s\n", hash_table->entry[key]->file_data->file_buf);
 		//walk the hash table as if collisions had happened until cache is found
 		if(key + 1 < max_cache_size) {
-			cache_insert(hash_table, data, max_cache_size, key + 1);
+			cache_lookup(hash_table, data, max_cache_size, key + 1);
 		}
 		else {
-			cache_insert(hash_table, data, max_cache_size, 0);
+			cache_lookup(hash_table, data, max_cache_size, 0);
 		}
 	}
 	return key;
@@ -206,7 +204,7 @@ do_server_request(struct server *sv, int connfd)
 	if(sv->max_cache_size > 0) {
 		pthread_mutex_lock(&hash_lock);
 		fprintf(stderr, "file name to check: %s\n", data->file_name);
-		unsigned long key = cache_lookup(hash_table, data, sv->max_cache_size);
+		unsigned long key = cache_lookup(hash_table, data, sv->max_cache_size, -1);
 		if(key == -1) {
 			//if this file was not cached before, send it, hash it and then insert
 			ret = request_readfile(rq);
@@ -318,12 +316,12 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 		}
 		if(max_cache_size > 0) {
 			hash_table = Malloc(sizeof(struct hash_table));
-			hash_table->entry = Malloc(sizeof(cache_hash) * max_cache_size);
+			hash_table->entry = Malloc(sizeof(cache_hash) * max_cache_size*12288); //average size of file
 			//populate hash table
 			for (int i = 0; i < max_cache_size; i++) {
 				hash_table->entry[i] = NULL;
 			}
-			hash_table->available_size = max_cache_size;
+			hash_table->available_size = max_cache_size*12288;
 		}
 	}
 
