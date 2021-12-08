@@ -53,8 +53,7 @@ int is_LRU_empty(struct LRU_queue *q) {
 }
 
 void add_to_LRU(struct LRU_queue *q, unsigned long hash_key) {
-	struct LRU_node *temp;
-	temp = malloc(sizeof(struct LRU_node));
+	struct LRU_node *temp = (struct LRU_node *)Malloc(sizeof(struct LRU_node));
 	temp->hash_key = hash_key;
 	temp->next = NULL;
 	if(!is_LRU_empty(q)) {
@@ -68,17 +67,22 @@ void add_to_LRU(struct LRU_queue *q, unsigned long hash_key) {
 }
 
 int get_LRU(struct LRU_queue *q) {
-	struct LRU_node *temp;
+	struct LRU_node *temp = NULL;
 	int file_size_rm = 0;
-	temp = q->front;
-	q->front = q->front->next;
 	if(q->front == NULL) {
 		q->rear = NULL;
 	}
+	else {
+		temp = q->front;
+		q->front = q->front->next;
+	}
 	if(temp != NULL) {
 		file_size_rm = hash_table->entry[temp->hash_key]->file_data->file_size; //fetch the file size of evicted file
-	}
-	else {
+		free(hash_table->entry[temp->hash_key]->file_data);
+		hash_table->entry[temp->hash_key]->file_data = NULL;
+		free(hash_table->entry[temp->hash_key]->file_name);
+		hash_table->entry[temp->hash_key] = NULL;
+		free(temp->next);
 		free(temp);
 	}
 	return(file_size_rm);
@@ -100,14 +104,17 @@ void cache_insert(struct hash_table *hash_table, struct file_data *data, int max
 	//there can't be more than max_cache_size number of files in the cache, unless every file is 1 byte, so this is reasonable
 	//unsigned long key = hash_fddunction(data->file_name, max_cache_size); //hash the file name
 	if(hash_table->entry[key] == NULL) {
-		hash_table->entry[key] = (cache_hash *)malloc(sizeof(cache_hash));
+		hash_table->entry[key] = Malloc(sizeof(cache_hash));
 	}
 	if(hash_table->entry[key]->file_name == NULL) {
 		//store the data into the hash table entries
-		hash_table->entry[key]->file_name = (char *)malloc(strlen(data->file_name + 1)*sizeof(char));
-		hash_table->entry[key]->file_data = (struct file_data *)malloc(sizeof(data));
+		hash_table->entry[key]->file_name = (char *)Malloc(strlen(data->file_name + 1)*sizeof(char));
+		hash_table->entry[key]->file_data = (struct file_data *)Malloc(sizeof(data));
 		strncpy(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name));
-		hash_table->entry[key]->file_data = data;
+		memcpy(hash_table->entry[key]->file_data, data, data->file_size);
+		add_to_LRU(q_LRU, key);
+		fprintf(stderr, "added to LRU: %ld\n", key);
+
 	}
 	else {
 		//resolves collisions by finding next available key
@@ -118,7 +125,6 @@ void cache_insert(struct hash_table *hash_table, struct file_data *data, int max
 			cache_insert(hash_table, data, max_cache_size, 0);
 		}
 	}
-	add_to_LRU(q_LRU, key);
 }
 
 //looksup the cache based on file name (by hashing it)
@@ -134,6 +140,8 @@ unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data
 		return key;
 	}
 	else {
+		fprintf(stderr, "lookup key: %ld\n", key);
+		fprintf(stderr, "data at key: %s\n", hash_table->entry[key]->file_data->file_buf);
 		//walk the hash table as if collisions had happened until cache is found
 		if(key + 1 < max_cache_size) {
 			cache_insert(hash_table, data, max_cache_size, key + 1);
@@ -197,11 +205,13 @@ do_server_request(struct server *sv, int connfd)
 	}
 	if(sv->max_cache_size > 0) {
 		pthread_mutex_lock(&hash_lock);
+		fprintf(stderr, "file name to check: %s\n", data->file_name);
 		unsigned long key = cache_lookup(hash_table, data, sv->max_cache_size);
 		if(key == -1) {
 			//if this file was not cached before, send it, hash it and then insert
 			ret = request_readfile(rq);
 			if(ret == 0) {
+				pthread_mutex_unlock(&hash_lock);
 				goto out;
 			}
 			request_sendfile(rq);
@@ -210,21 +220,24 @@ do_server_request(struct server *sv, int connfd)
 				key = hash_function(data->file_name, sv->max_cache_size);
 				cache_insert(hash_table, data, sv->max_cache_size, key);
 				hash_table->available_size -= data->file_size;
-				fprintf(stderr, "key inserted: %ld for data file name: %s\n", key, hash_table->entry[key]->file_name);
+				fprintf(stderr, "file size: %d, available size: %ld\n", data->file_size, hash_table->available_size);
 			}
 			else if(data->file_size > hash_table->available_size && data->file_size < sv->max_cache_size) {
 				//if cache is large enough to accommodate file but doesn't have enough space, evict until enough space
 				cache_evict(data->file_size);
+				fprintf(stderr, "file_size: %d, available_size: %ld\n", data->file_size, hash_table->available_size);
 				//once enough space, insert
 				key = hash_function(data->file_name, sv->max_cache_size);
 				cache_insert(hash_table, data, sv->max_cache_size, key);
 				hash_table->available_size -= data->file_size;
+				fprintf(stderr, "file_size %d, available size: %ld\n", data->file_size, hash_table->available_size);
 			}
 		}
 		else {
 			//if found in cache, set rq to data and send
 			request_set_data(rq, hash_table->entry[key]->file_data);
 			fprintf(stderr, "key trying to access: %ld\n", key);
+			fprintf(stderr, "key file size: %d\n", hash_table->entry[key]->file_data->file_size);
 			request_sendfile(rq);
 		}
 		pthread_mutex_unlock(&hash_lock);
@@ -253,7 +266,7 @@ out:
 /* entry point functions */
 
 //stub function is entry point for threads, which waits until there are requests signalled by server_request as they come in
-//when that happens, we save the data in the buffer and then increment the buffer out index
+//when that happens, we save the data in the buffer and then increment the buffer out ndex
 //then we decrement the number of requests waiting in the buffer, signal that the buffer is no longer full, and then do the server request
 void *stub(struct server *sv) {
 	//this loop ensures that all requests are handled until the thread is specifically called to exit
@@ -290,22 +303,22 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->max_cache_size = max_cache_size;
 	sv->exiting = 0;
 	
-	q_LRU = malloc(sizeof(struct LRU_queue));
+	q_LRU = Malloc(sizeof(struct LRU_queue));
 	initialize_LRU(q_LRU);
 	
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
 		if(max_requests > 0) {
-			sv->buffer = (int *)malloc(sizeof(int) * (max_requests + 1)); //create a circular buffer of max_request (static) size when max_requests > 0
+			sv->buffer = (int *)Malloc(sizeof(int) * (max_requests + 1)); //create a circular buffer of max_request (static) size when max_requests > 0
 		}
 		if(nr_threads > 0) {
-			sv->worker_threads = (pthread_t *)malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
+			sv->worker_threads = (pthread_t *)Malloc(sizeof(pthread_t) * nr_threads); //allocate memory for number of worker threads
 			for(int i = 0; i < nr_threads; i++) {
 				pthread_create(&(sv->worker_threads[i]), NULL, (void *)&stub, (void *)sv); //create n_threads and initialize them in stub
 			}
 		}
 		if(max_cache_size > 0) {
-			hash_table = malloc(sizeof(struct hash_table));
-			hash_table->entry = malloc(sizeof(cache_hash) * max_cache_size);
+			hash_table = Malloc(sizeof(struct hash_table));
+			hash_table->entry = Malloc(sizeof(cache_hash) * max_cache_size);
 			//populate hash table
 			for (int i = 0; i < max_cache_size; i++) {
 				hash_table->entry[i] = NULL;
