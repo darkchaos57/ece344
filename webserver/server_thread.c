@@ -9,6 +9,8 @@ struct server {
 	int exiting;
 	int *buffer; //circular buffer implementation
 	pthread_t *worker_threads;
+	struct hash_table *hash_table;
+
 	/* add any other parameters you need */
 };
 
@@ -21,7 +23,6 @@ pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
 
 //cache
 typedef struct cache_hash {
-	char *file_name;
 	struct file_data *file_data;
 }cache_hash;
 
@@ -30,8 +31,6 @@ struct hash_table {
 	cache_hash **entry;
 	unsigned long available_size;
 };
-
-struct hash_table *hash_table;
 
 struct LRU_node {
 	unsigned long hash_key;
@@ -66,7 +65,7 @@ void add_to_LRU(struct LRU_queue *q, unsigned long hash_key) {
 	}
 }
 
-int get_LRU(struct LRU_queue *q) {
+int get_LRU(struct LRU_queue *q, struct hash_table *hash_table) {
 	struct LRU_node *temp = NULL;
 	int file_size_rm = 0;
 	if(q->front == NULL) {
@@ -80,9 +79,8 @@ int get_LRU(struct LRU_queue *q) {
 		file_size_rm = hash_table->entry[temp->hash_key]->file_data->file_size; //fetch the file size of evicted file
 		free(hash_table->entry[temp->hash_key]->file_data);
 		hash_table->entry[temp->hash_key]->file_data = NULL;
-		free(hash_table->entry[temp->hash_key]->file_name);
+		free(hash_table->entry[temp->hash_key]);
 		hash_table->entry[temp->hash_key] = NULL;
-		free(temp->next);
 		free(temp);
 	}
 	return(file_size_rm);
@@ -106,27 +104,41 @@ void cache_insert(struct hash_table *hash_table, struct file_data *data, int max
 	if(hash_table->entry[key] == NULL) {
 		hash_table->entry[key] = Malloc(sizeof(cache_hash));
 	}
-	if(hash_table->entry[key]->file_name == NULL) {
+	if(hash_table->entry[key]->file_data == NULL) {
 		//store the data into the hash table entries
-		hash_table->entry[key]->file_name = (char *)Malloc(strlen(data->file_name)*sizeof(char));
-		hash_table->entry[key]->file_data = (struct file_data *)Malloc(sizeof(data));
-		strncpy(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name));
-		memcpy(hash_table->entry[key]->file_data, data, data->file_size);
+		memset(hash_table->entry[key], 0, sizeof(cache_hash));
+		hash_table->entry[key]->file_data = (struct file_data *)Malloc(sizeof(struct file_data) * data->file_size);
+		memset(hash_table->entry[key], 0, sizeof(cache_hash));
+		hash_table->entry[key]->file_data = (struct file_data *)Malloc(sizeof(struct file_data) * data->file_size);
+		hash_table->entry[key]->file_data->file_name = malloc(strlen(data->file_name)+1);
+		hash_table->entry[key]->file_data->file_buf = malloc(data->file_size + 1);
+		memset(hash_table->entry[key]->file_data->file_buf, 0, data->file_size + 1);
+		memset(hash_table->entry[key]->file_data->file_name, 0, strlen(data->file_name)+1);
+		memcpy(hash_table->entry[key]->file_data->file_buf, data->file_buf, data->file_size + 1);
+		hash_table->entry[key]->file_data->file_size = data->file_size;
+		strncpy(hash_table->entry[key]->file_data->file_name, data->file_name, strlen(data->file_name)+1);
 		add_to_LRU(q_LRU, key);
 	}
 	else {
-		//resolves collisions by finding next available key
-		if(key + 1 < max_cache_size) {
-			cache_insert(hash_table, data, max_cache_size, key + 1);
+		while(hash_table->entry[key] != NULL) {
+			key = (key + 1) % max_cache_size;
 		}
-		else {
-			cache_insert(hash_table, data, max_cache_size, 0);
-		}
+		hash_table->entry[key] = Malloc(sizeof(cache_hash));
+		memset(hash_table->entry[key], 0, sizeof(cache_hash));
+		hash_table->entry[key]->file_data = (struct file_data *)Malloc(sizeof(struct file_data) * data->file_size);
+		hash_table->entry[key]->file_data->file_name = malloc(strlen(data->file_name)+1);
+		hash_table->entry[key]->file_data->file_buf = malloc(data->file_size + 1);
+		memset(hash_table->entry[key]->file_data->file_buf, 0, data->file_size + 1);
+		memset(hash_table->entry[key]->file_data->file_name, 0, strlen(data->file_name)+1);
+		memcpy(hash_table->entry[key]->file_data->file_buf, data->file_buf, data->file_size + 1);
+		hash_table->entry[key]->file_data->file_size = data->file_size;
+		strncpy(hash_table->entry[key]->file_data->file_name, data->file_name, strlen(data->file_name)+1);
+		add_to_LRU(q_LRU, key);
 	}
 }
 
 //looksup the cache based on file name (by hashing it)
-unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data, int max_cache_size, unsigned long key) {
+int cache_lookup(struct hash_table *hash_table, struct file_data *data, int max_cache_size, int key) {
 	if(key == -1) {
 		//first entry into function
 		key = hash_function(data->file_name, max_cache_size);
@@ -135,33 +147,41 @@ unsigned long cache_lookup(struct hash_table *hash_table, struct file_data *data
 		//not found
 		return -1;
 	}
-	else if(strncmp(hash_table->entry[key]->file_name, data->file_name, strlen(data->file_name)) == 0) {
+	else if(strncmp(hash_table->entry[key]->file_data->file_name, data->file_name, strlen(data->file_name)) == 0) {
 		//do something with the found cache
 		return key;
 	}
 	else {
 		//walk the hash table as if collisions had happened until cache is found
 		if(key + 1 < max_cache_size) {
-			cache_lookup(hash_table, data, max_cache_size, key + 1);
+			key = cache_lookup(hash_table, data, max_cache_size, key + 1);
 		}
 		else {
-			cache_lookup(hash_table, data, max_cache_size, 0);
+			key = cache_lookup(hash_table, data, max_cache_size, 0);
 		}
 	}
 	return key;
-
 }
 
 //evict the selected file name from the hash table
-void cache_evict(int file_size) {
+void cache_evict(int file_size, struct hash_table *hash_table) {
 	//find key at head of LRU queue, pop off the queue, delete and free elements of that key in hash table
 	//remember size of file that was removed, check to see if its larger than file_size
 	//if not, that means we need to continue evicting (use cache_evict in a loop)
-	int size_evicted = get_LRU(q_LRU); //size of file evicted
+	int size_evicted = get_LRU(q_LRU, hash_table); //size of file evicted
 	hash_table->available_size += size_evicted;
 	if(hash_table->available_size < file_size) {
-		cache_evict(file_size);
+		cache_evict(file_size, hash_table);
 	}
+	/*for(int i = 0; i < 10000; i++) {
+		free(hash_table->entry[i]->file_name);
+		free(hash_table->entry[i]->file_data);
+		hash_table->entry[i]->file_name = NULL;
+		hash_table->entry[i]->file_data = NULL;
+		free(hash_table->entry[i]);
+		hash_table->entry[i] = NULL;
+	}
+	hash_table->available_size = 10000;*/
 }
 
 /* initialize file data */
@@ -203,44 +223,37 @@ do_server_request(struct server *sv, int connfd)
 	}
 	if(sv->max_cache_size > 0) {
 		pthread_mutex_lock(&hash_lock);
-		fprintf(stderr, "file name to check: %s\n", data->file_name);
-		unsigned long key = cache_lookup(hash_table, data, sv->max_cache_size, -1);
+		int key = cache_lookup(sv->hash_table, data, sv->max_cache_size, -1);
 		if(key == -1) {
 			//if this file was not cached before, send it, hash it and then insert
 			ret = request_readfile(rq);
 			if(ret == 0) {
-				pthread_mutex_unlock(&hash_lock);
 				goto out;
 			}
 			request_sendfile(rq);
-			if(data->file_size < hash_table->available_size) {
+			if(data->file_size < sv->hash_table->available_size) {
 				//only cache if the file is small enough to fit in the cache
 				key = hash_function(data->file_name, sv->max_cache_size);
-				cache_insert(hash_table, data, sv->max_cache_size, key);
-				hash_table->available_size -= data->file_size;
-				fprintf(stderr, "file size: %d, available size: %ld\n", data->file_size, hash_table->available_size);
+				cache_insert(sv->hash_table, data, sv->max_cache_size, key);
+				sv->hash_table->available_size -= data->file_size;
 			}
-			else if(data->file_size > hash_table->available_size && data->file_size < sv->max_cache_size) {
+			else if(data->file_size > sv->hash_table->available_size && data->file_size < sv->max_cache_size) {
 				//if cache is large enough to accommodate file but doesn't have enough space, evict until enough space
-				cache_evict(data->file_size);
-				fprintf(stderr, "file_size: %d, available_size: %ld\n", data->file_size, hash_table->available_size);
+				cache_evict(data->file_size, sv->hash_table);
 				//once enough space, insert
 				key = hash_function(data->file_name, sv->max_cache_size);
-				cache_insert(hash_table, data, sv->max_cache_size, key);
-				hash_table->available_size -= data->file_size;
-				fprintf(stderr, "file_size %d, available size: %ld\n", data->file_size, hash_table->available_size);
+				cache_insert(sv->hash_table, data, sv->max_cache_size, key);
+				sv->hash_table->available_size -= data->file_size;
 			}
 		}
 		else {
 			//if found in cache, set rq to data and send
-			request_set_data(rq, hash_table->entry[key]->file_data);
-			fprintf(stderr, "key trying to access: %ld\n", key);
-			fprintf(stderr, "key file size: %d\n", hash_table->entry[key]->file_data->file_size);
+			request_set_data(rq, sv->hash_table->entry[key]->file_data);
 			request_sendfile(rq);
 		}
-		pthread_mutex_unlock(&hash_lock);
 	}
 	else {
+		pthread_mutex_lock(&hash_lock);
 		ret = request_readfile(rq);
 		if(ret == 0) {
 			goto out;
@@ -259,6 +272,7 @@ do_server_request(struct server *sv, int connfd)
 out:
 	request_destroy(rq);
 	file_data_free(data);
+	pthread_mutex_unlock(&hash_lock);
 }
 
 /* entry point functions */
@@ -305,6 +319,15 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	initialize_LRU(q_LRU);
 	
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
+		if(max_cache_size > 0) {
+			sv->hash_table = Malloc(sizeof(struct hash_table));
+			sv->hash_table->entry = Malloc(sizeof(cache_hash) * max_cache_size); //average size of file
+			//populate hash table
+			for (int i = 0; i < max_cache_size; i++) {
+				sv->hash_table->entry[i] = NULL;
+			}
+			sv->hash_table->available_size = max_cache_size*sizeof(cache_hash);
+		}
 		if(max_requests > 0) {
 			sv->buffer = (int *)Malloc(sizeof(int) * (max_requests + 1)); //create a circular buffer of max_request (static) size when max_requests > 0
 		}
@@ -313,15 +336,6 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 			for(int i = 0; i < nr_threads; i++) {
 				pthread_create(&(sv->worker_threads[i]), NULL, (void *)&stub, (void *)sv); //create n_threads and initialize them in stub
 			}
-		}
-		if(max_cache_size > 0) {
-			hash_table = Malloc(sizeof(struct hash_table));
-			hash_table->entry = Malloc(sizeof(cache_hash) * max_cache_size*12288); //average size of file
-			//populate hash table
-			for (int i = 0; i < max_cache_size; i++) {
-				hash_table->entry[i] = NULL;
-			}
-			hash_table->available_size = max_cache_size*12288;
 		}
 	}
 

@@ -1,2 +1,9 @@
-Tue Dec  7 02:55:40 EST 2021
+Wed Dec  8 22:59:06 EST 2021
 Running cachesize experiment. Output goes to plot-cachesize.out
+client: client.c:66: client_print: Assertion `orig_csum == csum' failed.
+client: client.c:66: client_print: Assertion `orig_csum == csum' failed.
+./run-one-experiment: line 57: 22096 Segmentation fault      ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 57: 22110 Aborted                 ./client -t $HOST $PORT 100 10 $FILESET >> run.out
+error: run 1: ./client -t 127.0.0.1 25255 100 10 fileset_dir.idx
+forcing server shutdown
+Cachesize experiment done.
