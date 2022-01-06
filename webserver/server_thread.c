@@ -164,24 +164,24 @@ int cache_lookup(struct hash_table *hash_table, struct file_data *data, int max_
 }
 
 //evict the selected file name from the hash table
-void cache_evict(int file_size, struct hash_table *hash_table) {
+void cache_evict(int file_size, struct hash_table *hash_table, int max_cache_size) {
 	//find key at head of LRU queue, pop off the queue, delete and free elements of that key in hash table
 	//remember size of file that was removed, check to see if its larger than file_size
 	//if not, that means we need to continue evicting (use cache_evict in a loop)
-	int size_evicted = get_LRU(q_LRU, hash_table); //size of file evicted
+	/*int size_evicted = get_LRU(q_LRU, hash_table); //size of file evicted
 	hash_table->available_size += size_evicted;
 	if(hash_table->available_size < file_size) {
 		cache_evict(file_size, hash_table);
+	}*/
+	for(int i = 0; i < max_cache_size; i++) {
+		if(hash_table->entry[i] != NULL) {
+			if(hash_table->entry[i]->file_data != NULL) {
+				hash_table->entry[i]->file_data = NULL;
+			}
+			hash_table->entry[i] = NULL;
+		}
 	}
-	/*for(int i = 0; i < 10000; i++) {
-		free(hash_table->entry[i]->file_name);
-		free(hash_table->entry[i]->file_data);
-		hash_table->entry[i]->file_name = NULL;
-		hash_table->entry[i]->file_data = NULL;
-		free(hash_table->entry[i]);
-		hash_table->entry[i] = NULL;
-	}
-	hash_table->available_size = 10000;*/
+	hash_table->available_size = max_cache_size;
 }
 
 /* initialize file data */
@@ -239,7 +239,7 @@ do_server_request(struct server *sv, int connfd)
 			}
 			else if(data->file_size > sv->hash_table->available_size && data->file_size < sv->max_cache_size) {
 				//if cache is large enough to accommodate file but doesn't have enough space, evict until enough space
-				cache_evict(data->file_size, sv->hash_table);
+				cache_evict(data->file_size, sv->hash_table, sv->max_cache_size);
 				//once enough space, insert
 				key = hash_function(data->file_name, sv->max_cache_size);
 				cache_insert(sv->hash_table, data, sv->max_cache_size, key);
@@ -326,7 +326,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 			for (int i = 0; i < max_cache_size; i++) {
 				sv->hash_table->entry[i] = NULL;
 			}
-			sv->hash_table->available_size = max_cache_size*sizeof(cache_hash);
+			sv->hash_table->available_size = max_cache_size*sizeof(cache_hash)/10117;
 		}
 		if(max_requests > 0) {
 			sv->buffer = (int *)Malloc(sizeof(int) * (max_requests + 1)); //create a circular buffer of max_request (static) size when max_requests > 0
